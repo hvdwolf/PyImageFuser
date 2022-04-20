@@ -1,0 +1,11 @@
+# Ignore pyinstaller build and dist directory
+build
+dist
+
+# Ignore pycharm folders and project files
+.idea
+*.iml
+
+# Ignore log and zip files
+*.zip
+*.log
