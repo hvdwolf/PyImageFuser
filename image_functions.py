@@ -386,14 +386,20 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
 
     :param images:      The images to align and reduce noise off
     :type images:       (list)
-    :param eccMethod:   Use ECC (True; default) method or ORB (False) method
-    :type eccMethod:    (bool)
+    :param folder:      folder that contains original images
+    :type folder:       (str)
+    :param fileName:    filename that user gives to final image when stacking
+    :type fileName:     (str)
+    :param values:      This is the dictionary containing all UI key variables
+    :type values:       (Dict[Any, Any]) - {Element_key : value}
+    :param tmpfolder:   The dynamically created work folder in the OS temp folder
+    :type tmpfolder:    (str)
     """
     strBefore = 'image before aligning: '
     strAfter = 'image after aligning: '
     aligned_images = []
 
-    if values['_eccMethod_']:
+    if values['_eccMethod_']: # ECC => Enhanced Correlation Coefficient
         M = np.eye(3, 3, dtype=np.float32)
 
         first_image = None
