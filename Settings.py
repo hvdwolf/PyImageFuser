@@ -41,7 +41,6 @@ def settings_window():
     sg.user_settings_filename(path=Path.home())
     window = make_window()
 
-
     while True:
         event, values = window.read()
         if event in (sg.WINDOW_CLOSED, '_Exit_'):

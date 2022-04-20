@@ -84,6 +84,7 @@ def main():
 
     # Display the GUI to the user
     window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)
+
     while True:
         event, values = window.Read(timeout=100)
         window.Element('-WAITGIF-').UpdateAnimation(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','animated_dotsx32.gif'), time_between_frames=100)
@@ -179,9 +180,10 @@ def main():
                     window['_sgOutput_'].update(visible=True)
                     window.refresh()
                     if values['_align_images_']:
-                        #image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName), True)  # True for  "do align"
+                        image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName), True)  # True for  "do align"
                         #ui_layout.progress_window("enfusing")
                         #threading.Thread(target=image_functions.align_fuse, args=(values, full_images, tmpfolder, os.path.join(folder, newFileName), True, ), daemon=True).start()
+                        '''
                         try:
                             print('start run_long_functions.long_function_with_animation')
                             ftarget = 'image_functions.align_fuse'
@@ -190,6 +192,7 @@ def main():
                             run_long_functions.long_function_with_animation(target = ftarget, args = fargs,message= fmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.85)
                         except Exception as e:
                             logger(e)
+                        '''
                     else:  # Create full image without aligning
                         image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName),True)  # True for  "do align"
                     window['_sgOutput_'].update(visible=False)
@@ -204,19 +207,23 @@ def main():
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                 newFileName, full_images = image_functions.get_filename_images(values, folder)
                 if newFileName != '' and newFileName != 'Cancel':
+                    '''
                     #window.write_event_value('_updater_', '')
                     #window['-WAITGIF-'].Update(visible=True)
                     window['_sgOutput_'].update(visible=True)
                     window['_progress_message_'].update('starting noise reduction')
                     #window['bar'].Update(visible=True)
                     window.refresh()
+                    '''
                     image_functions.do_noise_reduction(full_images, os.path.join(folder, newFileName), window, values)
+                    '''
                     #ui_layout.progress_window("noise reduction")
                     threading.Thread(target=image_functions.do_noise_reduction,args=(full_images, os.path.join(folder, newFileName), values,),daemon=True).start()
                     window['_progress_message_'].update('noise reduction finished')
                     window['_sgOutput_'].update(visible=False)
                     window.refresh()
                     #thread_done = True
+                    '''
                     if values['_dispFinalIMG_']:
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
             else: # 1 or 0 images selected
