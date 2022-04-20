@@ -119,16 +119,12 @@ def main():
 
     while True:
         event, values = window.Read(timeout=100)
-        window.Element('-WAITGIF-').UpdateAnimation(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','animated_dotsx32.gif'), time_between_frames=100)
-        #print('You entered ', values)
-        window['bar'].Widget['value'] += window['bar'].metadata
         if event == sg.WIN_CLOSED or event == '_Close_' or event == 'Exit':
             file_functions.remove_tmp_workfolder(tmpfolder)
             #print('pressed Close')
             return('Cancel', values)
             break
         elif event == '-FILES-':
-            #print('values["-FILES-"]   ',values["-FILES-"])
             filenames = []
             window['-FILE LIST-'].update(filenames)
             if values["-FILES-"]: # or values["-FILES-"] == {}: #empty list returns False
