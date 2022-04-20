@@ -183,13 +183,17 @@ def main():
                 else: # failed = ''
                     go_on = True
                 if go_on:
+                    disable_elements(window, True)
+                    window.refresh()
                     if (values['_align_images_']):
                         aligned_images = image_functions.do_align_and_noise_reduction(resized_images, '', '', values, tmpfolder)
                         image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
-                        image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
                     else:  # Create preview without aligning
-                        image_functions.align_fuse(values, resized_images, tmpfolder, 'preview', False) # False for "don't align"
-                        image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
+                        #image_functions.align_fuse(values, resized_images, tmpfolder, 'preview', False) # False for "don't align"
+                        image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
+                    disable_elements(window, False)
+                    window.refresh()
+                    image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
         elif event == '_CreateImage_':
