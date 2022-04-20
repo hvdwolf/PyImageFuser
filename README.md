@@ -1,2 +1,4 @@
 # PyImageFuser
-Python3 PySimpleGui program to exposure fuse bracketed images and reduce noise in stacks
+Python3 PySimpleGui program to exposure fuse bracketed images and reduce noise in stacks.
+
+In development, no releases yet.
