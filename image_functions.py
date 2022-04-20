@@ -377,3 +377,130 @@ def exposure_fuse(all_values, images, tmpfolder, filename_type):
     else:
         print("\nSaving finale fused image ...\n")
         cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
+
+
+def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
+    """
+    This code is copied from: https://github.com/maitek/image_stacking
+    Only some merging of code and minor changes were applied
+
+    :param images:      The images to align and reduce noise off
+    :type images:       (list)
+    :param eccMethod:   Use ECC (True; default) method or ORB (False) method
+    :type eccMethod:    (bool)
+    """
+    strBefore = 'image before aligning: '
+    strAfter = 'image after aligning: '
+    aligned_images = []
+
+    if values['_eccMethod_']:
+        M = np.eye(3, 3, dtype=np.float32)
+
+        first_image = None
+        stacked_image = None
+
+        for image in images:
+            tmpfilename = os.path.basename(image)
+            basename, ext = os.path.splitext(tmpfilename)
+            print(strBefore, image)
+            image = cv2.imread(image, 1).astype(np.float32) / 255
+            print(image)
+            #window['_progress_message_'].update('noise reduction, working on: ' + image)
+
+            if first_image is None:
+                # convert to gray scale floating point image
+                first_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                stacked_image = image
+                if tmpfolder != '':
+                    newFile = os.path.join(tmpfolder, basename + '.png')
+                    aligned_images.append(newFile)
+                    print(strAfter, newFile)
+                    newImage = (image * 255).astype(np.uint8)
+                    cv2.imwrite(str(newFile), newImage)
+            else:
+                # Estimate perspective transform
+                s, M = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, M,
+                                            cv2.MOTION_HOMOGRAPHY)
+                w, h, _ = image.shape
+                # Align image to first image
+                image = cv2.warpPerspective(image, M, (h, w))
+                stacked_image += image
+                if tmpfolder != '':
+                    newFile = os.path.join(tmpfolder, basename + '.png')
+                    aligned_images.append(newFile)
+                    print(strAfter, newFile)
+                    newImage = (image * 255).astype(np.uint8)
+                    cv2.imwrite(str(newFile), newImage)
+        if folder != '' and fileName != '':
+            stacked_image /= len(images)
+            stacked_image = (stacked_image * 255).astype(np.uint8)
+            cv2.imwrite(str(fileName), stacked_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(values['_jpgCompression_'])])
+
+        return aligned_images
+
+    else: # We use the ORB method => Images KeyPoint matching
+        orb = cv2.ORB_create()
+
+        # disable OpenCL to because of bug in ORB in OpenCV 3.1
+        cv2.ocl.setUseOpenCL(False)
+
+        stacked_image = None
+        first_image = None
+        first_kp = None
+        first_des = None
+        for image in images:
+            tmpfilename = os.path.basename(image)
+            basename, ext = os.path.splitext(tmpfilename)
+            print(strBefore, image)
+            image = cv2.imread(image, 1)
+            imageF = image.astype(np.float32) / 255
+            print(imageF)
+
+            # compute the descriptors with ORB
+            kp = orb.detect(image, None)
+            kp, des = orb.compute(image, kp)
+
+            # create BFMatcher object
+            matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+            if first_image is None:
+                # Save keypoints for first image
+                stacked_image = imageF
+                first_image = image
+                first_kp = kp
+                first_des = des
+                if tmpfolder != '':
+                    newFile = os.path.join(tmpfolder, basename + '.png')
+                    aligned_images.append(newFile)
+                    print(strAfter, newFile)
+                    newImage = (imageF * 255).astype(np.uint8)
+                    cv2.imwrite(str(newFile), newImage)
+            else:
+                # Find matches and sort them in the order of their distance
+                matches = matcher.match(first_des, des)
+                matches = sorted(matches, key=lambda x: x.distance)
+
+                src_pts = np.float32(
+                    [first_kp[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+                dst_pts = np.float32(
+                    [kp[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+
+                # Estimate perspective transformation
+                M, mask = cv2.findHomography(dst_pts, src_pts, cv2.RANSAC, 5.0)
+                w, h, _ = imageF.shape
+                imageF = cv2.warpPerspective(imageF, M, (h, w))
+                stacked_image += imageF
+                if tmpfolder != '':
+                    newFile = os.path.join(tmpfolder, basename + '.png')
+                    aligned_images.append(newFile)
+                    print(strAfter, newFile)
+                    newImage = (imageF * 255).astype(np.uint8)
+                    cv2.imwrite(str(newFile), newImage)
+
+        if folder != '' and fileName != '':
+            stacked_image /= len(images)
+            stacked_image = (stacked_image * 255).astype(np.uint8)
+            cv2.imwrite(str(fileName), stacked_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(values['_jpgCompression_'])])
+
+        return aligned_images
+
