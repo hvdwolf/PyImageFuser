@@ -50,9 +50,8 @@ resize_error_message = '''Something went really wrong with resizing.
 The program can\'t continue. Please check your images carefully.'''
 
 about_message = 'About PyImageFuser, Version ' + Version + '\n\n'
-about_message += 'PyImageFuser is a graphical frontend for enfuse and align_image_stack.\n'
-about_message += 'PyImageFuser is built using Python3 and PySimpleGui.\n\n'
 about_message += 'PyImageFuser can be used for exposure bracketing and noise reduction.\n\n'
+about_message += 'PyImageFuser is built using Python3 and PySimpleGui.\n\n'
 about_message += 'PyImageFuser is released under GPL v3.\n'
 about_message += 'You should find the license with this software.\n\n'
 about_message += 'Author: Harry van der Wolf.'

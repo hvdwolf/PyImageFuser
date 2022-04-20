@@ -88,7 +88,7 @@ def getFileName(folder):
         foldertxt = 'You selected the images source folder as destination.\nClick "Browse" to select another folder'
         folderInputTxt = folder
 
-    layout = [[sg.Text('Enter a filename without extension:')],
+    layout = [[sg.Text('Enter the image filename:')],
               [sg.Input(key='-FILENAME-')],
               [sg.Text(foldertxt)],
               [sg.Input(folderInputTxt, key='-FOLDER-'), sg.FolderBrowse()],

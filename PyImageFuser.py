@@ -43,6 +43,37 @@ image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif 
 
 #----------------------------------------------------------------------------------------------
 #------------------------------- Helper functions ---------------------------------------------
+# This functions
+def disable_elements(window, disable_elements):
+    '''
+    This function disables / enables some buttons on the screen
+    and does the opposite action for the output element
+
+    :param window:             main window where elements are acted upon
+    :type window:              Window
+    :param disable_elements:   True or False
+    :type disable_elements:    (bool)
+    '''
+
+    if disable_elements:
+        window['_btnLoadImages_'].update(disabled=True)
+        window['_btnPreferences_'].update(disabled=True)
+        window['_select_all_'].update(disabled=True)
+        window['_create_preview_'].update(disabled=True)
+        window['_CreateImage_'].update(disabled=True)
+        window['_noise_reduction_'].update(disabled=True)
+        window['_Close_'].update(disabled=True)
+        window['_sgOutput_'].update(visible=True) # When buttons are disabled, output window becomes visible
+    else:
+        window['_btnLoadImages_'].update(disabled=False)
+        window['_btnPreferences_'].update(disabled=False)
+        window['_select_all_'].update(disabled=False)
+        window['_create_preview_'].update(disabled=False)
+        window['_CreateImage_'].update(disabled=False)
+        window['_noise_reduction_'].update(disabled=False)
+        window['_Close_'].update(disabled=False)
+        window['_sgOutput_'].update(visible=False) # When buttons are enabled, output window is hidden
+
 def replace_strings(Lines, orgstring, newstring):
     newLines = []
     # Now do the replacing
@@ -78,7 +109,8 @@ def main():
     file_functions.recreate_tmp_workfolder(tmpfolder)
     sg.user_settings_filename(path=os.path.realpath(Path.home()))
     start_folder = sg.user_settings_get_entry('imgfolder', os.path.realpath(Path.home()))
-    print("\nsettingsfile: ",settingsFile)
+    print("\ntmpfolder: ", tmpfolder)
+    print("settingsfile: ",settingsFile)
     print("tmpdir", os.path.realpath(tempfile.gettempdir()))
     print("current path ", os.path.realpath('.'))
 
@@ -95,9 +127,6 @@ def main():
             #print('pressed Close')
             return('Cancel', values)
             break
-        elif event == '_dispOutput_':
-            #print(values['_dispOutput_'])
-            window['_sgOutput_'].update(visible=values['_dispOutput_'])
         elif event == '-FILES-':
             #print('values["-FILES-"]   ',values["-FILES-"])
             filenames = []
@@ -159,7 +188,8 @@ def main():
                     go_on = True
                 if go_on:
                     if (values['_align_images_']):
-                        image_functions.align_fuse(values, resized_images, tmpfolder, 'preview', True) #True for  "do align"
+                        aligned_images = image_functions.do_align_and_noise_reduction(resized_images, '', '', values, tmpfolder)
+                        image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
                         image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
                     else:  # Create preview without aligning
                         image_functions.align_fuse(values, resized_images, tmpfolder, 'preview', False) # False for "don't align"
@@ -173,29 +203,15 @@ def main():
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                 newFileName, full_images = image_functions.get_filename_images(values, folder)
                 if newFileName != '' and newFileName != 'Cancel':
-                    #window.write_event_value('_updater_', '')
-                    #window['-WAITGIF-'].Update(visible=True)
-                    #window['_progress_message_'].update('aligning and fusing')
-                    #window['bar'].Update(visible=True)
-                    window['_sgOutput_'].update(visible=True)
+                    disable_elements(window, True)
                     window.refresh()
                     if values['_align_images_']:
-                        image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName), True)  # True for  "do align"
-                        #ui_layout.progress_window("enfusing")
-                        #threading.Thread(target=image_functions.align_fuse, args=(values, full_images, tmpfolder, os.path.join(folder, newFileName), True, ), daemon=True).start()
-                        '''
-                        try:
-                            print('start run_long_functions.long_function_with_animation')
-                            ftarget = 'image_functions.align_fuse'
-                            fargs = (values, full_images, tmpfolder,os.path.join(folder, newFileName))
-                            fmessage = 'Aligning and fusing images'
-                            run_long_functions.long_function_with_animation(target = ftarget, args = fargs,message= fmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.85)
-                        except Exception as e:
-                            logger(e)
-                        '''
+                        aligned_images = image_functions.do_align_and_noise_reduction(full_images, '', '', values, tmpfolder)
+                        image_functions.exposure_fuse(values, aligned_images, tmpfolder, os.path.join(folder, newFileName))
                     else:  # Create full image without aligning
-                        image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName),True)  # True for  "do align"
-                    window['_sgOutput_'].update(visible=False)
+                        #image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName),True)  # True for  "do align"
+                        image_functions.exposure_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName))
+                    disable_elements(window, False)
                     window.refresh()
                     if values['_dispFinalIMG_']:
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
@@ -207,39 +223,14 @@ def main():
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                 newFileName, full_images = image_functions.get_filename_images(values, folder)
                 if newFileName != '' and newFileName != 'Cancel':
-                    '''
-                    #window.write_event_value('_updater_', '')
-                    #window['-WAITGIF-'].Update(visible=True)
-                    window['_sgOutput_'].update(visible=True)
-                    window['_progress_message_'].update('starting noise reduction')
-                    #window['bar'].Update(visible=True)
-                    window.refresh()
-                    '''
-                    image_functions.do_noise_reduction(full_images, os.path.join(folder, newFileName), window, values)
-                    '''
-                    #ui_layout.progress_window("noise reduction")
-                    threading.Thread(target=image_functions.do_noise_reduction,args=(full_images, os.path.join(folder, newFileName), values,),daemon=True).start()
-                    window['_progress_message_'].update('noise reduction finished')
-                    window['_sgOutput_'].update(visible=False)
-                    window.refresh()
-                    #thread_done = True
-                    '''
+                    disable_elements(window, True)
+                    image_functions.do_align_noise_reduction(full_images, folder, newFileName, values, '')
+                    disable_elements(window, False)
                     if values['_dispFinalIMG_']:
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
 
-        # --------------- Check for incoming messages from threads  ---------------
-        '''
-        if thread_done is True:
-            print('The thread has finished!')
-            thread_done = False
-            window.write_event_value('_updater_', '')
-            window['-WAITGIF-'].Update(visible=False)
-            window['_progress_message_'].update('')
-            window['bar'].Update(visible=False)
-            window.refresh()
-            '''
 
     window.Close()
 

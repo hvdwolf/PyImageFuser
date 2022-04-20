@@ -14,16 +14,13 @@
 
 import PySimpleGUI as sg
 
-import io, os, platform
+import io, os
 from PIL import Image
 from pathlib import Path
 
 import image_functions
 import program_texts
 
-
-#filenames = []
-#pathnames = []
 
 def which_folder():
     init_folder = ""
@@ -93,17 +90,12 @@ def create_and_show_gui(tmpfolder, startFolder):
         [sg.Checkbox('Always align images', key='_align_images_', default=True)],
         [sg.Checkbox('Display image after enfusing', key='_dispFinalIMG_', default=True)],
         [sg.Checkbox('Save final image to source folder', key='_saveToSource_', default=True)],
-        [sg.Checkbox('Noise reduction use ECC method', key='_eccMethod_', default=True, tooltip='ECC is more accurate than ORB, but 3-5x as slow')],
-        #[sg.VPush()],
-        #[sg.Checkbox('Show program / progress\nin output window', key='_dispOutput_', change_submits = True, enable_events=True, default=False)],
-        #[sg.VPush()]
+        [sg.Checkbox('Use ECC method for aligning', key='_eccMethod_', default=True, tooltip='ECC is more accurate than ORB, but 3-5x as slow')],
     ]
     layoutMain_SaveAs = [
         [sg.Text('Save Images as:')],
         [sg.Radio('.jpg (Default)', "RADIOSAVEAS", default=True, key='_jpg_'), sg.Spin([x for x in range(1,100)],initial_value="90", key='_jpgCompression_')],
         [sg.Radio('.Tiff 8bits', "RADIOSAVEAS", default=False, key='_tiff8_'), sg.Combo(['deflate', 'packbits', 'lzw', 'none'], default_value='deflate', key='_tiffCompression')],
-        #[sg.Radio('.Tiff 16 bits', "RADIOSAVEAS", default=False, key='_tiff16_'), sg.Combo(['deflate', 'packbits', 'lzw', 'none'], default_value='deflate', key='_tiffCompression')],
-        #[sg.Radio('.Tiff 32 bits', "RADIOSAVEAS", default=False, key='_tiff32_')]
     ]
     layoutMain_Presets = [
         [sg.Text('Presets')],
@@ -143,22 +135,19 @@ def create_and_show_gui(tmpfolder, startFolder):
 #--------------------------- Left and right panel -----------------
     layoutLeftPanel = [
         [sg.In(size=(1, 1), enable_events=True, key="-FILES-", visible=False),
-            sg.FilesBrowse(button_text = 'Load Images', font = ('Calibri', 10, 'bold'), initial_folder=which_folder(), file_types = program_texts.image_formats),
+            sg.FilesBrowse(button_text = 'Load Images', font = ('Calibri', 10, 'bold'), initial_folder=which_folder(), file_types = program_texts.image_formats, key='_btnLoadImages_'),
             sg.Button('Preferences', font = ('Calibri', 10, 'bold'), key='_btnPreferences_')],
         [sg.Text('Images Folder:')],
         [sg.Text(size=(60, 1), key='-FOLDER-', font = ('Calibri', 10, 'italic'))],
         [sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Output(size=(40, 20), visible=False, key = '_sgOutput_')],
+        #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), ],
         [sg.Button('Select all', font = ('Calibri', 10, 'bold'), key='_select_all_'), sg.Checkbox('Display selected image when clicked on', key='_display_selected_')],
         [sg.Frame('Program Settings', layoutMainFrame, font = ('Calibri', 10, 'bold'),)],
     ]
 
     layoutRightPanel = [
-#        [sg.Image(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','preview.png'), key='-IMAGE-')],
         [sg.Image(display_org_preview(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','preview.png')), key='-IMAGE-')],
-        #[sg.Button('Create Preview', font = ('Calibri', 12, 'bold'), key='_create_preview_'), sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)]
         [sg.Button('(Re)Create Preview', font = ('Calibri', 10, 'bold'), key='_create_preview_')],
-        [sg.Image(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','animated_dotsx32.gif'), key='-WAITGIF-', visible=False), sg.Text('', key='_progress_message_')],
-        [sg.Text('', key='_updater_', visible=False), sg.ProgressBar(max_value=100, size=(30, 10), key='bar', metadata=5, visible=False)]
     ]
 
 #----------------------------------------------------------------------------------------------
@@ -166,15 +155,10 @@ def create_and_show_gui(tmpfolder, startFolder):
     layout = [
         [sg.Menu(menu_def, tearoff=False)],
         [sg.Column(layoutLeftPanel), sg.VSeperator(), sg.Column(layoutRightPanel)],
-        #[sg.Frame('Program Settings', layoutMainFrame, font = ('Calibri', 12, 'bold'),)],
-        #[sg.TabGroup([[sg.Tab('Main', layoutMainTab, tooltip='For default enfuse you can simply stay on this tab'), sg.Tab('Enfuse', layoutExposureFusionTab, tooltip='Options to control enfuse outcome'), ]])],
-        #[sg.Frame(layoutButtons)]
         [sg.Push(), sg.Button('Create Exposure fused image', font = ('Calibri', 10, 'bold'), key='_CreateImage_', tooltip='Use this option for Exposure fusion'),
          sg.Button('Create noise reduced image', font = ('Calibri', 10, 'bold'), key='_noise_reduction_', tooltip='Use this option for improved noise reduction'),
          sg.Button('Close', font = ('Calibri', 10, 'bold'), key = '_Close_')]
     ]
 
     # Open the window and return it to pyimagefuser
-
-    #return sg.Window('PyImageFuser ' + program_texts.Version).Layout(layout)
     return sg.Window('PyImageFuser ' + program_texts.Version, layout, icon=image_functions.get_icon())

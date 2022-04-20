@@ -119,6 +119,17 @@ def get_basic_exif_info_from_file(filename, output):
 # This function resizes the original selected images when
 # the user clicks on "create preview" or "create enfused image"
 def resizetopreview(all_values, folder, tmpfolder):
+    '''
+    This function resizes the original selected images when
+    the user clicks on "create preview" or "create fused image"
+
+    :param all_values:    The values from the Gui elements
+    :type all_values:     (Dict[Any, Any]) - {Element_key : value}
+    :param folder:        The folder holding the original images
+    :type folder:         (str)
+    :param tmpfolder:     The dynamically created work folder in the OS temp folder
+    :type tmpfolder:      (str)
+    '''
     img = ""
     failed = ""
     images = []
@@ -177,25 +188,6 @@ def resizesingletopreview(folder, tmpfolder, image):
         except Exception as e:
             PyImageFuser.logger(e)
             # pass
-
-
-
-def check_enfuse_output_format(all_values):
-    cmd_string = ""
-    if all_values['_jpg_']:
-        if all_values['_jpgCompression_'] == 90:
-            cmd_string += '--compression=90 '
-        else:
-            cmd_string += '--compression=' + str(int(all_values['_jpgCompression_'])) + ' '
-    else: # User selected tiff output
-        cmd_string += '--compression=' + all_values['_tiffCompression'] + ' --depth='
-        if all_values['_tiff8_']:
-            cmd_string += '8 '
-        elif all_values['_tif16_']:
-            cmd_string += '16 '
-        else:
-            cmd_string += '32 '
-    return cmd_string
 
 def get_curr_screen_geometry():
     """
@@ -313,7 +305,7 @@ def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
     :type all_values:       (Dict[Any, Any]) - {Element_key : value}
     :param images:          The images to (optionally) align and fuse
     :type images:           (list)
-    :param tmpfolder:       The dynamically create work folder in the OS temp folder
+    :param tmpfolder:       The dynamically created work folder in the OS temp folder
     :type tmpfolder:        (str)
     :param filename_type:   Either the real final filename or a string 'preview'
     :type filename_type:    (str)
@@ -321,9 +313,12 @@ def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
     :type align_YN:         (bool)
     """
     work_images = []
+    processed_images = None
+    #processed_work_images = []
     for image in images:
         im = cv2.imread(image)
         work_images.append(im)
+
     if align_YN: # True
         if filename_type == 'preview':
             print("Aligning preview images ...\n")
@@ -331,114 +326,54 @@ def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
             print("Aligning full size images ...\n")
         alignMTB = cv2.createAlignMTB()
         alignMTB.process(work_images, work_images)
-    print("Merging using Exposure Fusion ...\n")
+
+    print("\nMerging using Exposure Fusion ...\n")
     mergeMertens = cv2.createMergeMertens()
     mergeMertens.setContrastWeight(all_values['_contrast_weight_'])
     mergeMertens.setExposureWeight(all_values['_exposure_weight_'])
     mergeMertens.setSaturationWeight(all_values['_saturation_weight_'])
     exposureFusion = mergeMertens.process(work_images)
+    #exposureFusion = mergeMertens.process(processed_images)
     if filename_type == 'preview':
-        print("Saving preview image ...\n")
+        print("\nSaving preview image ...\n")
         cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image
     else:
-        print("Saving finale fused image ...\n")
+        print("\nSaving finale fused image ...\n")
         cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
 
-
-def do_noise_reduction(images, fileName, window, values):
+# Mostly copied from https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
+# but removed the inferior createAlignMTB() and replaced that with the ECC method
+def exposure_fuse(all_values, images, tmpfolder, filename_type):
     """
-    This code is copied from: https://github.com/maitek/image_stacking
-    Only some merging of code and minor changes were applied
+    This function uses the opencv options to exposure fuse the images
+    the images are either the resized images for the preview, or the full images for the final result
 
-    :param images:      The images to align and reduce noise off
-    :type images:       (list)
-    :param eccMethod:   Use ECC (True; default) method or ORB (False) method
-    :type eccMethod:    (bool)
+    :param all_values:      This is the dictionary containing all UI key variables
+    :type all_values:       (Dict[Any, Any]) - {Element_key : value}
+    :param images:          The images to (optionally) align and fuse
+    :type images:           (list)
+    :param tmpfolder:       The dynamically create work folder in the OS temp folder
+    :type tmpfolder:        (str)
+    :param filename_type:   Either the real final filename or a string 'preview'
+    :type filename_type:    (str)
     """
+    work_images = []
+    processed_images = None
+    #processed_work_images = []
+    for image in images:
+        im = cv2.imread(image)
+        work_images.append(im)
 
-    #global thread_done
-    #thread_done = False
-    if values['_eccMethod_']:
-        M = np.eye(3, 3, dtype=np.float32)
-
-        first_image = None
-        stacked_image = None
-
-        for image in images:
-            image = cv2.imread(image, 1).astype(np.float32) / 255
-            print(image)
-            #window['_progress_message_'].update('noise reduction, working on: ' + image)
-
-            if first_image is None:
-                # convert to gray scale floating point image
-                first_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                stacked_image = image
-            else:
-                # Estimate perspective transform
-                s, M = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, M,
-                                            cv2.MOTION_HOMOGRAPHY)
-                w, h, _ = image.shape
-                # Align image to first image
-                image = cv2.warpPerspective(image, M, (h, w))
-                stacked_image += image
-
-        stacked_image /= len(images)
-        stacked_image = (stacked_image * 255).astype(np.uint8)
-        cv2.imwrite(str(fileName), stacked_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(values['_jpgCompression_'])])
-        # Now let the GUI know that our long running function has ended
-        #thread_done = True
-
-    else: # We use the ORB method => Images KeyPoint matching
-        orb = cv2.ORB_create()
-
-        # disable OpenCL to because of bug in ORB in OpenCV 3.1
-        cv2.ocl.setUseOpenCL(False)
-
-        stacked_image = None
-        first_image = None
-        first_kp = None
-        first_des = None
-        for image in images:
-            print(image)
-            image = cv2.imread(image, 1)
-            imageF = image.astype(np.float32) / 255
-
-            # compute the descriptors with ORB
-            kp = orb.detect(image, None)
-            kp, des = orb.compute(image, kp)
-
-            # create BFMatcher object
-            matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-            if first_image is None:
-                # Save keypoints for first image
-                stacked_image = imageF
-                first_image = image
-                first_kp = kp
-                first_des = des
-            else:
-                # Find matches and sort them in the order of their distance
-                matches = matcher.match(first_des, des)
-                matches = sorted(matches, key=lambda x: x.distance)
-
-                src_pts = np.float32(
-                    [first_kp[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-                dst_pts = np.float32(
-                    [kp[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
-
-                # Estimate perspective transformation
-                M, mask = cv2.findHomography(dst_pts, src_pts, cv2.RANSAC, 5.0)
-                w, h, _ = imageF.shape
-                imageF = cv2.warpPerspective(imageF, M, (h, w))
-                stacked_image += imageF
-
-        stacked_image /= len(images)
-        stacked_image = (stacked_image * 255).astype(np.uint8)
-        jpg_quality = 90
-        cv2.imwrite(str(fileName), stacked_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(values['_jpgCompression_'])])
-
-        # Now let the GUI know that our long running function has ended
-        #thread_done = True
-
-
-
+    print("\nMerging using Exposure Fusion ...\n")
+    mergeMertens = cv2.createMergeMertens()
+    mergeMertens.setContrastWeight(all_values['_contrast_weight_'])
+    mergeMertens.setExposureWeight(all_values['_exposure_weight_'])
+    mergeMertens.setSaturationWeight(all_values['_saturation_weight_'])
+    exposureFusion = mergeMertens.process(work_images)
+    #exposureFusion = mergeMertens.process(processed_images)
+    if filename_type == 'preview':
+        print("\nSaving preview image ...\n")
+        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image
+    else:
+        print("\nSaving finale fused image ...\n")
+        cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
