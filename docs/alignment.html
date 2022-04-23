@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+<link rel="STYLESHEET" type="text/css" href="styles.css">
+<link rel="shortcut icon" href="logo.ico" >
+</head>
+<body topmargin="20" leftmargin="50">
+OpenCV offers multiple alignment options. In PyImageFuser we can use a number of those alignment methods being:
+<ul>
+<li>ECC: Enhanced Correlation Coefficient (ECC) Maximization</li>
+<li>AlignMTB: This algorithm converts images to median threshold bitmaps (1 for pixels brighter than median luminance and 0 otherwise) and than aligns the resulting bitmaps using bit operations. It is invariant to exposure, so exposure values and camera response are not necessary.</li>
+<li>ORB: Oriented FAST and Rotated BRIEF</li>
+</ul>
+
+ECC is not feature based. It is a motion model alignment algorithm.
+SIFT, SURF and ORB are feature based
+
+<H2>ECC motion models:</H2>
+<ul>
+<li>Translation ( MOTION_TRANSLATION ) : The first image can be shifted ( translated ) by (x , y) to obtain the second image. There are only two parameters x and y that we need to estimate.</li>
+<li>Euclidean ( MOTION_EUCLIDEAN ) : The first image is a rotated and shifted version of the second image. So there are three parameters — x, y and angle . You will notice in Figure 4, when a square undergoes Euclidean transformation, the size does not change, parallel lines remain parallel, and right angles remain unchanged after transformation.</li>
+<li>Affine ( MOTION_AFFINE ) : An affine transform is a combination of rotation, translation ( shift ), scale, and shear. This transform has six parameters. When a square undergoes an Affine transformation, parallel lines remain parallel, but lines meeting at right angles no longer remain orthogonal.</li>
+<li>Homography ( MOTION_HOMOGRAPHY ) : All the transforms described above are 2D transforms. They do not account for 3D effects. A homography transform on the other hand can account for some 3D effects ( but not all ). This transform has 8 parameters. A square when transformed using a Homography can change to any quadrilateral.</li>
+</ul>
+
+
+</body>
+</html>
