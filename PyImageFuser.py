@@ -14,14 +14,13 @@
 # the GNU General Public Licence for more details.
 
 import PySimpleGUI as sg
-import os, sys , tempfile, threading
+import os, sys , tempfile, timeit
 # Necessary for windows
 import requests
 from pathlib import Path
 import cv2
 
 #------- Helper python scripts ----
-import run_long_functions
 import ui_layout
 import Settings
 import image_functions
@@ -63,7 +62,8 @@ def disable_elements(window, disable_elements):
         window['_CreateImage_'].update(disabled=True)
         window['_noise_reduction_'].update(disabled=True)
         window['_Close_'].update(disabled=True)
-        window['_sgOutput_'].update(visible=True) # When buttons are disabled, output window becomes visible
+        ##window['_sgOutput_'].update(visible=True, disabled=False, echo_stdout_stderr=True) # When buttons are disabled, output window becomes visible
+        window['_sgOutput_'].update(visible=True)  # When buttons are disabled, output window becomes visible
     else:
         window['_btnLoadImages_'].update(disabled=False)
         window['_btnPreferences_'].update(disabled=False)
@@ -72,7 +72,14 @@ def disable_elements(window, disable_elements):
         window['_CreateImage_'].update(disabled=False)
         window['_noise_reduction_'].update(disabled=False)
         window['_Close_'].update(disabled=False)
+        ##window['_sgOutput_'].update(visible=False, disabled=True, echo_stdout_stderr=False) # When buttons are enabled, output window is hidden
         window['_sgOutput_'].update(visible=False) # When buttons are enabled, output window is hidden
+
+def display_processing_time(window, starttime, stoptime):
+    proc_time = stoptime - starttime
+    str_proc_time = 'Processing time: ' + format(proc_time, '.2f') + ' seconds'
+    window['_proc_time_'].update(str_proc_time , visible=True, )
+    print(str_proc_time)
 
 def replace_strings(Lines, orgstring, newstring):
     newLines = []
@@ -119,6 +126,7 @@ def main():
 
     while True:
         event, values = window.Read(timeout=100)
+        #window['_proc_time_'].update('Processing time: --')
         if event == sg.WIN_CLOSED or event == '_Close_' or event == 'Exit':
             file_functions.remove_tmp_workfolder(tmpfolder)
             #print('pressed Close')
@@ -150,13 +158,19 @@ def main():
             window.disappear()
             sg.popup(program_texts.Credits, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
             window.reappear()
+        elif event == 'Program parameters':
+            #window.disappear()
+            program_texts.explain_parameters_popup()
+            #window.reappear()
         elif event == 'Preferences' or event =='_btnPreferences_':
             Settings.settings_window()
         elif event == '_select_all_':
-            print('_select_all_')
-            #print(str(values["-FILES-"].split(";")))
-            #index = range(len(values["-FILES-"].split(";")))
-            #window["-FILE LIST-"](set_to_index=[index], scroll_to_index=index)
+            #print('_select_all_')
+            list_index = []
+            max = len(values["-FILES-"].split(";"))
+            list_index.extend(range(0, max))
+            window['-FILE LIST-'].update(set_to_index = list_index,)
+            window.refresh()
         elif event == "-FILE LIST-":  # A file was chosen from the listbox
             #print('A file was chosen from the listbox')
             if values['_display_selected_'] and len(values['-FILE LIST-']) !=0:
@@ -166,6 +180,7 @@ def main():
             # The exposure fusion and aligning has been copied from below page
             # https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
             print('User pressed Create Preview\n')
+            window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) >1: # We have at least 2 files
                 failed, resized_images = image_functions.resizetopreview(values, folder, tmpfolder)
                 print(failed)
@@ -185,12 +200,17 @@ def main():
                 if go_on:
                     disable_elements(window, True)
                     window.refresh()
-                    if (values['_align_images_']):
+                    starttime = timeit.default_timer()
+                    if values['_align_images_'] and not values['_radio_alignmtb_']: # align with ecc or orb
                         aligned_images = image_functions.do_align_and_noise_reduction(resized_images, '', '', values, tmpfolder)
                         image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
+                    elif values['_align_images_'] and values['_radio_alignmtb_']:
+                        image_functions.align_fuse(values, resized_images, tmpfolder, 'preview',True)
                     else:  # Create preview without aligning
                         #image_functions.align_fuse(values, resized_images, tmpfolder, 'preview', False) # False for "don't align"
                         image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
+                    stoptime = timeit.default_timer()
+                    display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
                     image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
@@ -199,18 +219,26 @@ def main():
         elif event == '_CreateImage_':
             # The exposure fusion and aligning has been copied from below page
             # https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
-            print('User pressed "Create Exposure fused image"\n')
+            print('User pressed "Create Exposure fused image\n')
+            window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                 newFileName, full_images = image_functions.get_filename_images(values, folder)
-                if newFileName != '' and newFileName != 'Cancel':
+                if newFileName == '':
+                    sg.popup("You did not provide a filename!", icon=image_functions.get_icon())
+                elif newFileName != 'Cancel':
                     disable_elements(window, True)
                     window.refresh()
-                    if values['_align_images_']:
+                    starttime = timeit.default_timer()
+                    if values['_align_images_'] and not values['_radio_alignmtb_']: # align with ecc or orb
                         aligned_images = image_functions.do_align_and_noise_reduction(full_images, '', '', values, tmpfolder)
                         image_functions.exposure_fuse(values, aligned_images, tmpfolder, os.path.join(folder, newFileName))
+                    elif values['_align_images_'] and values['_radio_alignmtb_']:
+                        image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName), True)
                     else:  # Create full image without aligning
                         #image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName),True)  # True for  "do align"
                         image_functions.exposure_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName))
+                    stoptime = timeit.default_timer()
+                    display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
                     if values['_dispFinalIMG_']:
@@ -220,17 +248,20 @@ def main():
         elif event == '_noise_reduction_':
             # This code is copied from: https://github.com/maitek/image_stacking
             print('User pressed "Create noise reduced image"\n')
+            window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                 newFileName, full_images = image_functions.get_filename_images(values, folder)
                 if newFileName != '' and newFileName != 'Cancel':
                     disable_elements(window, True)
-                    image_functions.do_align_noise_reduction(full_images, folder, newFileName, values, '')
+                    starttime = timeit.default_timer()
+                    image_functions.do_align_and_noise_reduction(full_images, folder, newFileName, values, '')
+                    stoptime = timeit.default_timer()
+                    display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     if values['_dispFinalIMG_']:
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
-
 
     window.Close()
 

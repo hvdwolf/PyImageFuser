@@ -21,11 +21,16 @@ def make_window():
          sg.Combo(values=sorted(('480', '640', '800')), default_value=sg.user_settings_get_entry('last_size_chosen', '640'), size=(5, 1), key='-COMBO-')],
         [sg.Text('(The aspect ratio of the image is preserved)')]
     ]
+    jpegframelayout = [
+        [sg.Spin([x for x in range(1, 100)], initial_value=sg.user_settings_get_entry('jpgCompression', '90'), key='_jpgCompression_', size=3),
+         sg.Text('Default jpg compression when jpg is chosen as output format')],
+    ]
 
     layout = [[sg.Text('Preferences', font = ('Calibri', 14, 'bold'))],
               #[sg.Input(sg.user_settings_get_entry('input', ''), k='-IN-')],
               [sg.Frame('Folder settings', folderframelayout)],
               [sg.Frame('Preview settings', previewframelayout)],
+              [sg.Frame('jpeg compression', jpegframelayout)],
               [sg.T('\nPreferences file = ' + sg.user_settings_filename())],
               [sg.Button('Save'), sg.Button('Exit without saving', key='_Exit_')]]
 
@@ -50,6 +55,7 @@ def settings_window():
             sg.user_settings_set_entry('imgfolder', values['-IMGFOLDER-'])
             sg.user_settings_set_entry('CBlast_opened_folder', values['-CBlop-'])
             sg.user_settings_set_entry('last_size_chosen', values['-COMBO-'])
+            sg.user_settings_set_entry('jpgCompression', values['_jpgCompression_'])
             sg.popup("Preferences saved", icon=image_functions.get_icon(), auto_close=True, auto_close_duration=2)
             break
 

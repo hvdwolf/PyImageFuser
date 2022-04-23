@@ -12,7 +12,7 @@
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
 
-import glob, os, shutil, sys
+import glob, os, shutil, sys, cv2
 
 import PySimpleGUI as sg
 
@@ -32,9 +32,6 @@ def resource_path(relative_path):
 
     return os.path.join(os.path.realpath(base_path), relative_path)
 
-#def enf_ais_path(relative_path):
-#    enf_ais = os.path.join(os.path.realpath("."), enfuse_ais)
-#    return enf_ais
 
 # This functions (re)creates our work folder which is a subfolder
 # of the platform define tmp folder
@@ -43,6 +40,7 @@ def recreate_tmp_workfolder(tmp_folder):
     if os.path.exists(tmp_folder):
         try:
             shutil.rmtree(tmp_folder) # emove all contents of the folder
+            os.mkdir(tmp_folder) # recreate folder
         except:
             print('Error deleting directory')
         # Now leave it be as it is now empty
@@ -88,14 +86,15 @@ def getFileName(folder):
         foldertxt = 'You selected the images source folder as destination.\nClick "Browse" to select another folder'
         folderInputTxt = folder
 
-    layout = [[sg.Text('Enter the image filename:')],
+    layout = [[sg.Text('Enter the image filename:', font = ('Calibri', 10, 'bold'))],
+              [sg.Text('The fileformat to save to is determined by the extension, which is either .jp(e)g, .tif(f) or .png')],
+              [sg.Text('Without extension it will be saved as jpg in the quality as specified in the "Preferences"')],
               [sg.Input(key='-FILENAME-')],
               [sg.Text(foldertxt)],
               [sg.Input(folderInputTxt, key='-FOLDER-'), sg.FolderBrowse()],
-              [sg.B('OK'), sg.B('Cancel')]]
+              [sg.B('OK',  bind_return_key=True), sg.B('Cancel'), ]]
 
     window = sg.Window('Provide a filename', layout, icon=image_functions.get_icon())
-    #window['OK'].bind('<Enter>')
     while True:
         event, values = window.read()
         if event in(sg.WINDOW_CLOSED, 'Cancel'):
@@ -109,6 +108,22 @@ def getFileName(folder):
 
     window.close()
     return folder, fileName
+
+def save_file(imgFile, cv2_image):
+    basename, extension = os.path.splitext(imgFile)
+    print('\n basename, extension: ', basename, ', ', extension)
+    ext = extension.lower()
+    if ext == '.tif' or ext == '.tiff':
+        cv2.imwrite(imgFile, cv2_image, )
+    elif ext == '.png':
+        cv2.imwrite(imgFile, cv2_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+    elif ext == '.jpg' or ext == '.jpeg':
+        cv2.imwrite(imgFile, cv2_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))])
+    elif ext == '' or len(ext) == 0: # which means we add save to the default jpg format
+        cv2.imwrite(imgFile + '.jpg', cv2_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))])
+
+
+
 
 # This functions gets the file sizes of the preview images
 def getFileSizes(all_values, tmpfolder):

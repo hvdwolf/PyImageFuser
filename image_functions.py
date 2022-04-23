@@ -239,7 +239,11 @@ def displayImage(imgpath):
 
 def displayImageWindow(imgpath):
 
-    rawimgpath = str(imgpath)
+    # If the user did not specify a file name extension, the program added ".jpg"
+    basename, extension = os.path.splitext(imgpath)
+    ext = extension.lower()
+    if ext == '' or len(ext) == 0:
+        rawimgpath = str(imgpath + '.jpg')
     print('displaying your image: ', rawimgpath, '\n')
     newImg = Image.open(rawimgpath)
     #imgsize = newImg.size
@@ -275,6 +279,8 @@ def get_icon():
 
 
 def get_filename_images(values, folder):
+    full_images = []
+
     if values['_saveToSource_']:
         folderFileName = file_functions.getFileName(folder)  # user wants to save image to same folder
     else:
@@ -287,12 +293,13 @@ def get_filename_images(values, folder):
     elif folderFileName[1] == 'Cancel':
         print('user Cancelled')
     else:
-        full_images = []
         files = values['-FILE LIST-']
         for file in files:
             full_images.append(os.path.join(folder, file))
 
     return folderFileName[1], full_images
+
+
 
 # Mostly copied from https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
 def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
@@ -333,13 +340,14 @@ def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
     mergeMertens.setExposureWeight(all_values['_exposure_weight_'])
     mergeMertens.setSaturationWeight(all_values['_saturation_weight_'])
     exposureFusion = mergeMertens.process(work_images)
-    #exposureFusion = mergeMertens.process(processed_images)
     if filename_type == 'preview':
         print("\nSaving preview image ...\n")
-        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image
+        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))]) # * 255 to get an 8-bit image
     else:
-        print("\nSaving finale fused image ...\n")
-        cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
+        print("\nSaving finale fused image ...\n", str(filename_type), "\n")
+        cv2_image = exposureFusion * 255
+        file_functions.save_file(str(filename_type), cv2_image)
+        #cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
 
 # Mostly copied from https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
 # but removed the inferior createAlignMTB() and replaced that with the ECC method
@@ -370,13 +378,13 @@ def exposure_fuse(all_values, images, tmpfolder, filename_type):
     mergeMertens.setExposureWeight(all_values['_exposure_weight_'])
     mergeMertens.setSaturationWeight(all_values['_saturation_weight_'])
     exposureFusion = mergeMertens.process(work_images)
-    #exposureFusion = mergeMertens.process(processed_images)
     if filename_type == 'preview':
         print("\nSaving preview image ...\n")
-        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image
+        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))]) # * 255 to get an 8-bit image
     else:
         print("\nSaving finale fused image ...\n")
-        cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(all_values['_jpgCompression_'])]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
+        cv2_image = exposureFusion * 255
+        file_functions.save_file(str(filename_type), cv2_image)
 
 
 def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
@@ -395,12 +403,12 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
     :param tmpfolder:   The dynamically created work folder in the OS temp folder
     :type tmpfolder:    (str)
     """
-    strBefore = 'image before aligning: '
-    strAfter = 'image after aligning: '
+    strBefore = '\nimage before aligning: '
+    strAfter = '\nimage after aligning: '
     aligned_images = []
 
-    if values['_eccMethod_']: # ECC => Enhanced Correlation Coefficient
-        M = np.eye(3, 3, dtype=np.float32)
+    if values['_radio_ecc_']: # ECC => Enhanced Correlation Coefficient
+        warp_mode = ''
 
         first_image = None
         stacked_image = None
@@ -411,28 +419,52 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
             print(strBefore, image)
             image = cv2.imread(image, 1).astype(np.float32) / 255
             print(image)
-            #window['_progress_message_'].update('noise reduction, working on: ' + image)
 
             if first_image is None:
                 # convert to gray scale floating point image
                 first_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 stacked_image = image
                 if tmpfolder != '':
-                    newFile = os.path.join(tmpfolder, basename + '.png')
+                    #newFile = os.path.join(tmpfolder, basename + '.png')
+                    newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
                     aligned_images.append(newFile)
                     print(strAfter, newFile)
                     newImage = (image * 255).astype(np.uint8)
                     cv2.imwrite(str(newFile), newImage)
             else:
                 # Estimate perspective transform
-                s, M = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, M,
-                                            cv2.MOTION_HOMOGRAPHY)
+                if values['_homography_']:
+                    warp_matrix = np.eye(3, 3, dtype=np.float32)  # cv2.MOTION_HOMOGRAPHY
+                    s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, cv2.MOTION_HOMOGRAPHY)
+                else:
+                    warp_matrix = np.eye(2, 3, dtype=np.float32)  # all other warp modes
+                    if values['_affine_']:
+                        warp_mode = cv2.MOTION_AFFINE
+                    elif values['_euclidean_']:
+                        warp_mode = cv2.MOTION_EUCLIDEAN
+                    elif values['_translation_']:
+                        warp_mode = cv2.MOTION_TRANSLATION
+                    # Start using Criteria parameter, specifying the termination criteria of the ECC algorithm;
+                    # Criteria.epsilon defines the threshold of the increment in the correlation coefficient between two iterations
+                    # (a negative Criteria.epsilon makes Criteria.maxcount the only termination criterion).
+                    # Default values are: struct('type','Count+EPS', 'maxCount',50, 'epsilon',0.001)
+                    number_of_iterations = 5000
+                    termination_eps = 1e-10;
+                    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
+                    # specify criteria as last parameter in the cv2.findTransformECC
+                    # like cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode, criteria )
+                    s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode, criteria )
                 w, h, _ = image.shape
+
                 # Align image to first image
-                image = cv2.warpPerspective(image, M, (h, w))
+                if values['_homography_']:
+                    image = cv2.warpPerspective(image, warp_matrix, (h, w)) # HOMOGRAPHY
+                else:
+                    image = cv2.warpAffine(image, warp_matrix, (h, w)) # Use warpAffine for Translation, Euclidean and Affine
                 stacked_image += image
                 if tmpfolder != '':
-                    newFile = os.path.join(tmpfolder, basename + '.png')
+                    #newFile = os.path.join(tmpfolder, basename + '.png')
+                    newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
                     aligned_images.append(newFile)
                     print(strAfter, newFile)
                     newImage = (image * 255).astype(np.uint8)
@@ -440,12 +472,17 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
         if folder != '' and fileName != '':
             stacked_image /= len(images)
             stacked_image = (stacked_image * 255).astype(np.uint8)
-            cv2.imwrite(str(fileName), stacked_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(values['_jpgCompression_'])])
+            file_functions.save_file(str(os.path.join(folder,fileName)), stacked_image)
 
         return aligned_images
 
     else: # We use the ORB method => Images KeyPoint matching
         orb = cv2.ORB_create()
+        # for sift
+        #sift = cv2.SIFT_create()
+        # affine might function better here than homography
+        # H, _ = cv.estimateAffine2D(pts_ir, pts_color)
+        # H = np.vstack((H, [0, 0, 1]))
 
         # disable OpenCL to because of bug in ORB in OpenCV 3.1
         cv2.ocl.setUseOpenCL(False)
@@ -477,6 +514,7 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
                 first_des = des
                 if tmpfolder != '':
                     newFile = os.path.join(tmpfolder, basename + '.png')
+                    #newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
                     aligned_images.append(newFile)
                     print(strAfter, newFile)
                     newImage = (imageF * 255).astype(np.uint8)
@@ -498,6 +536,7 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
                 stacked_image += imageF
                 if tmpfolder != '':
                     newFile = os.path.join(tmpfolder, basename + '.png')
+                    # newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
                     aligned_images.append(newFile)
                     print(strAfter, newFile)
                     newImage = (imageF * 255).astype(np.uint8)
@@ -506,7 +545,24 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
         if folder != '' and fileName != '':
             stacked_image /= len(images)
             stacked_image = (stacked_image * 255).astype(np.uint8)
-            cv2.imwrite(str(fileName), stacked_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(values['_jpgCompression_'])])
+            file_functions.save_file(str(os.path.join(folder, fileName)), stacked_image)
 
         return aligned_images
 
+'''
+    elif values['_radio_alignmtb_']:
+        work_images = []
+        new_image = None
+        alignMTB = cv2.createAlignMTB()
+        for image in images:
+            if new_image is None:
+                new_image = image
+            im = cv2.imread(image)
+            work_images.append(im)
+        alignMTB.process(work_images, work_images)
+        mergeExposures = cv2.MergeExposures()
+        mergeExposures.process(work_images)
+        new_image /= len(work_images)
+        new_image = (new_image * 255).astype(np.uint8)
+        file_functions.save_file(str(os.path.join(folder, fileName)), new_image)
+'''
