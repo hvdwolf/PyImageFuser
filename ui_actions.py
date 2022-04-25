@@ -17,7 +17,15 @@ import io, os
 from pathlib import Path
 from PIL import Image
 
+
 def display_org_preview(imgfile):
+    '''
+    This functions displays the embedded preview before any other
+    preview image is created
+
+    :param imgfile:    the path plus file of the preview image
+    :type imgfile:     (str)
+    '''
     try:
         print("\n\nimgfile ", imgfile)
         image = Image.open(imgfile)
@@ -34,6 +42,16 @@ def display_org_preview(imgfile):
 
 
 def set_fuse_presets(window, values):
+    '''
+    This functions reacts on the event where the radiobutton for opencv or enfuse
+    preset is chosen and sets Contrast weight, Exposure weight and Saturation
+    weight accordingly
+
+    :param window:          This is the main window which we need to set values
+    :type window:           window
+    :param values:          This is the dictionary containing all UI key variables
+    :type values:           (Dict[Any, Any]) - {Element_key : value}
+    '''
     if values['_preset_opencv_']:
         window['_exposure_weight_'].update(value=0.0)
         window['_saturation_weight_'].update(value=1.0)

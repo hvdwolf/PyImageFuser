@@ -136,14 +136,10 @@ Used code (Thanks to the writers):
 
 # Add a \n every max. 78 characters
 Explain_parameters = {
-    "Always align images" : "Even on a tripod you might have minimal movement causing misalignment and \ntherefore unsharp blended images. Aligning them will improve sharpness, using \neither ECC or ORB.",
-    "Use ECC method for aligning" : "Enhanced Correlation Coefficient image aligning is way more accurate than the \nORB (Oriented FAST and Rotated BRIEF) method, but also 2-5x slower. But \nsometimes ORB can perform just as well as ECC. Try for yourself.",
-    "Display image after exposure fusing" : "After the image has been created and saved, it will be displayed in a python \ninternal viewer window.",
+    "Always align images" : "Even on a tripod you might have minimal movement causing misalignment and therefore unsharp blended images.\nAligning them will improve sharpness, using either alignMTB or ECC.",
+    "Display image after exposure fusing" : "After the image has been created and saved, it will be displayed in a python internal viewer window.",
     "Save final image to source folder" : "Save the image to the source folder, e.g. only ask filename",
-    "Exposure Weight" : "Sets the relative weight of the \"well exposed\" pixels. These pixels are considered \nbetter exposed as those with high or low luminance levels.",
-    "Saturation Weight" : "The saturation criteria favors highly-saturated pixels. (Note that saturation \nis only defined for color pixels.)",
-    "Contrast Weight" : "The contrast criteria favors pixels inside a high-contrast neighborhood",
-    "Create exposure fused image" : "Merge the different exposures of the same scene into a nice output image using \nthe Mertens-Kautz-Van Reeth exposure fusion algorithm.",
-    "Create noise reduced image" : "Noise is random. Blending a stack of multiple images into one will remove the \nrandom pixels. By default the ECC method is used but you can also use ORB.",
+    "Create exposure fused image" : "Merge the different exposures of the same scene into a nice output image using the Mertens-Kautz-Van Reeth\nexposure fusion algorithm.",
+    "Create noise reduced image" : "Noise is random. Blending a stack of multiple images into one will remove the random pixels.\nBy default the ECC method is used but you can also use ORB.",
 }
 

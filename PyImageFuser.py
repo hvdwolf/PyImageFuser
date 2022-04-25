@@ -164,9 +164,9 @@ def main():
             program_texts.explain_parameters_popup()
             #window.reappear()
         elif event == 'Exposure fusion' or event == '_expfuse_help_':
-            webbrowser.open('file://' + os.path.join(os.path.realpath(os.getcwd()),'docs','exposurefusing.html') )
+            webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'exposurefusing.html')))
         elif event == 'Alignment' or event == '_align_help_':
-            webbrowser.open('file://' + os.path.join(os.path.realpath(os.getcwd()), 'docs', 'alignment.html'))
+            webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'alignment.html')))
         elif event == 'Preferences' or event =='_btnPreferences_':
             Settings.settings_window()
         elif event == '_select_all_':

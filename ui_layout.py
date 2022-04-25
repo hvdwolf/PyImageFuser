@@ -152,7 +152,7 @@ def create_and_show_gui(tmpfolder, startFolder):
         [sg.Push(),
          #sg.Button('AlignMTB fused image', font = ('Calibri', 10, 'bold'), key='_AlignMTB_', tooltip='Use this option for Exposure fusion'),
          sg.Button('Create Exposure fused image', font = ('Calibri', 10, 'bold'), key='_CreateImage_', tooltip='Use this option for Exposure fusion'),
-         sg.Button('Create noise reduced image', font = ('Calibri', 10, 'bold'), key='_noise_reduction_', tooltip='Use this option for improved noise reduction'),
+         sg.Button('Create noise reduced image', font = ('Calibri', 10, 'bold'), key='_noise_reduction_', tooltip='Use this option for noise reduction'),
          sg.Button('Close', font = ('Calibri', 10, 'bold'), key = '_Close_')]
     ]
 
