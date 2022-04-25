@@ -6,23 +6,42 @@
 <link rel="shortcut icon" href="logo.ico" >
 </head>
 <body topmargin="20" leftmargin="50">
+<H2>Align your images</H2>
 OpenCV offers multiple alignment options. In PyImageFuser we can use a number of those alignment methods being:
 <ul>
-<li>ECC: Enhanced Correlation Coefficient (ECC) Maximization</li>
 <li>AlignMTB: This algorithm converts images to median threshold bitmaps (1 for pixels brighter than median luminance and 0 otherwise) and than aligns the resulting bitmaps using bit operations. It is invariant to exposure, so exposure values and camera response are not necessary.</li>
-<li>ORB: Oriented FAST and Rotated BRIEF</li>
+<li>ECC: Enhanced Correlation Coefficient (ECC) Maximization</li>
+<li>ORB: Oriented FAST and Rotated BRIEF. Actually ORB should not be in this list as ORB is actually a feature based keypoint detector.</li>
 </ul>
 
-ECC is not feature based. It is a motion model alignment algorithm.
-SIFT, SURF and ORB are feature based
+<p>AlignMTB is an aligning method using Median Threshold Bitmaps (MTB). This means that the images are first converted to these bitmaps, then having 1 for pixels higher than
+median luminance and 0 for pixels lower than median luminance.
+<p>ECC is not feature based. It is a motion model alignment algorithm.
+<p>ORB is a feature based keypoint detector with rotation enhancements (rotated BRIEF), but is more suitable for panoramas and stacks and less for alignment in exposure bracketing.<br>
+For more info about ORB see this <a href="https://docs.opencv.org/3.4/d1/d89/tutorial_py_orb.html" target="_blank">OpenCV tutorial artcle</a>
 
-<H2>ECC motion models:</H2>
+<H2>ECC geometric image transformation models:</H2>
+<p><strong>First the simple explanation:</strong><br>
+See below the graphical representation of the geometric transformation models for images.<br>
+<center><img src="./GeometricTransformationModels720p.png" border="0"></center>
+Now let's assume our image is a piece of paper lying on a table.<br>
 <ul>
-<li>Translation ( MOTION_TRANSLATION ) : The first image can be shifted ( translated ) by (x , y) to obtain the second image. There are only two parameters x and y that we need to estimate.</li>
-<li>Euclidean ( MOTION_EUCLIDEAN ) : The first image is a rotated and shifted version of the second image. So there are three parameters — x, y and angle . You will notice in Figure 4, when a square undergoes Euclidean transformation, the size does not change, parallel lines remain parallel, and right angles remain unchanged after transformation.</li>
+<li>In "Translation" we simply slide the piece of paper a little (2-Dimensional).</li>
+<li>In "Euclidean" we also rotate the piece of paper a little (2-Dimensional).</li>
+<li><i>Now assume our piece of paper is a little elastic.</i></li>
+<li>In "Euclidean" we shift and rotate it a bit, and we also stretch it a bit on the opposite corners (2-Dimensional).</li>
+<li>In "Homography" (also called perspective) we shift, rotate, stretch and lift it slightly and uneven of the table (3-Dimensional).</li>
+</ul>
+<p><strong>Now the "scientific" explanation:</strong><br>
+<ul>
+<li>Translation ( MOTION_TRANSLATION ) : The first image can be shifted ( translated ) by (x , y) to obtain the second image. There are only two parameters x and y that need to be estimated.</li>
+<li>Euclidean ( MOTION_EUCLIDEAN ) : The first image is a rotated and shifted version of the second image. There are three parameters — x, y and angle . In the Euclidean transformation of a square, the size does not change, parallel lines remain parallel, and right angles remain unchanged after transformation.</li>
 <li>Affine ( MOTION_AFFINE ) : An affine transform is a combination of rotation, translation ( shift ), scale, and shear. This transform has six parameters. When a square undergoes an Affine transformation, parallel lines remain parallel, but lines meeting at right angles no longer remain orthogonal.</li>
 <li>Homography ( MOTION_HOMOGRAPHY ) : All the transforms described above are 2D transforms. They do not account for 3D effects. A homography transform on the other hand can account for some 3D effects ( but not all ). This transform has 8 parameters. A square when transformed using a Homography can change to any quadrilateral.</li>
 </ul>
+
+
+See for OpenCV geometric transformation in images <a href="https://docs.opencv.org/3.4/da/d6e/tutorial_py_geometric_transformations.html" target="_blank">this</a> short article.
 
 
 </body>

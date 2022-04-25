@@ -328,10 +328,11 @@ def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
 
     if align_YN: # True
         if filename_type == 'preview':
-            print("Aligning preview images ...\n")
+            print("Aligning preview images using alignMTB ...\n")
         else:
-            print("Aligning full size images ...\n")
-        alignMTB = cv2.createAlignMTB()
+            print("Aligning full size images using alignMTB ...\n")
+        #alignMTB = cv2.createAlignMTB()
+        alignMTB = cv2.createAlignMTB(int(all_values['_bitshiftCombo_']))
         alignMTB.process(work_images, work_images)
 
     print("\nMerging using Exposure Fusion ...\n")
@@ -409,6 +410,7 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
 
     if values['_radio_ecc_']: # ECC => Enhanced Correlation Coefficient
         warp_mode = ''
+        print('\n\nAligning images using ECC via\n\n')
 
         first_image = None
         stacked_image = None
@@ -448,12 +450,13 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
                     # Criteria.epsilon defines the threshold of the increment in the correlation coefficient between two iterations
                     # (a negative Criteria.epsilon makes Criteria.maxcount the only termination criterion).
                     # Default values are: struct('type','Count+EPS', 'maxCount',50, 'epsilon',0.001)
-                    number_of_iterations = 5000
-                    termination_eps = 1e-10;
-                    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
+                    #number_of_iterations = 5000
+                    #termination_eps = 1e-10;
+                    #criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
                     # specify criteria as last parameter in the cv2.findTransformECC
                     # like cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode, criteria )
-                    s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode, criteria )
+                    #s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode, criteria )
+                    s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode,)
                 w, h, _ = image.shape
 
                 # Align image to first image
@@ -477,12 +480,8 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
         return aligned_images
 
     else: # We use the ORB method => Images KeyPoint matching
+        print('\n\nDoing keypoint detection using ORB\n\n')
         orb = cv2.ORB_create()
-        # for sift
-        #sift = cv2.SIFT_create()
-        # affine might function better here than homography
-        # H, _ = cv.estimateAffine2D(pts_ir, pts_color)
-        # H = np.vstack((H, [0, 0, 1]))
 
         # disable OpenCL to because of bug in ORB in OpenCV 3.1
         cv2.ocl.setUseOpenCL(False)
@@ -513,8 +512,8 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
                 first_kp = kp
                 first_des = des
                 if tmpfolder != '':
-                    newFile = os.path.join(tmpfolder, basename + '.png')
-                    #newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
+                    #newFile = os.path.join(tmpfolder, basename + '.png')
+                    newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
                     aligned_images.append(newFile)
                     print(strAfter, newFile)
                     newImage = (imageF * 255).astype(np.uint8)
@@ -535,8 +534,8 @@ def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
                 imageF = cv2.warpPerspective(imageF, M, (h, w))
                 stacked_image += imageF
                 if tmpfolder != '':
-                    newFile = os.path.join(tmpfolder, basename + '.png')
-                    # newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
+                    #newFile = os.path.join(tmpfolder, basename + '.png')
+                    newFile = os.path.join(tmpfolder, basename + '.ppm') # Should be 3x faster than png
                     aligned_images.append(newFile)
                     print(strAfter, newFile)
                     newImage = (imageF * 255).astype(np.uint8)

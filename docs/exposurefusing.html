@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+<link rel="STYLESHEET" type="text/css" href="styles.css">
+<link rel="shortcut icon" href="logo.ico" >
+</head>
+<body topmargin="20" leftmargin="50" >
+<H2>Why doing Exposure Fusion?</H2>
+
+<p>Currently, the best cameras on the market have a dynamic range of around 15 stops on average, and 12-13 for the average models.
+Compact cameras and phones even less.<br>
+However, the human eye can perceive 20-21 stops of dynamic range.
+Our eyes are able to pick up details in deep shadow, as well as significantly brighter areas from any given scene, simultaneously.
+Actually our eyes are not that much better but our "image algorithms" are much better and adapt automatically to our focus points of attention and correct these.
+</p>
+<p>We can try to achieve that using a set of photos with different exposure. This is called exposure bracketing.<br>
+Most modern camera's support "auto bracketing". You make a photo in "auto bracketing" mode and your camera will take (in general) three photos: a 0EV standard exposure image, a -1EV underexposed image and a +1EV overexposed image.
+Almost all camera's have a manual setting to compensate from -2EV (or -3EV) to +2EV (or +3EV) and sometimes more.
+These manual settings are preferred over the standard "auto" mode which is mostly limited to -1/+1 EV.
+To improve your image, "more is usually better". This means that you can better take the maximum exposure correction values: a -2EV, 0EV and +2EV photo.
+If your camera supports bigger bracketed series, you might use: -2, -1, 0, +1, +2 (EV) to get a bracketed series of 5 photos, or even 7 photos (-3, -2, -1, 0, 1, 2, 3).<br>
+However, "more is not always better". Check the histograms of your images on camera to see if the underexposed one and the over exposed one cover the range you need.<br>
+Some cameras offer the ability to only view afterwards, but most cameras nowadays also have a "live view".
+There is no need for images at even higher or lower EV if they don't contribute to your histogram. There are many excellent articles on the web telling you how to do this.
+</p>
+<p>If possible use a tripod and find a steady subject. Moving objects are always difficult, even at high shutter speeds.</p>
+
+<H2>Method of Exposure Fusing</H2>
+We use the exposure bracketing method as described by <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.64.7616&rep=rep1&type=pdf" target="_blank">Tom Mertens,
+Jan Kautz and Frank Van Reeth</a>.<br>
+We use the OpenCV class <a href="https://docs.opencv.org/4.5.5/d7/dd6/classcv_1_1MergeMertens.html" target="_blank">"MergeMertens"</a> for this.
+In this exposure fusion algorithm pixels are weighted using contrast, saturation and well-exposedness. After the "weighting" the images are combined using laplacian pyramids.
+<ul>
+    <li>Contrast Weight : The contrast criteria favors pixels inside a high-contrast neighborhood</li>
+    <li>Exposure Weight : Sets the relative weight of the "well exposed" pixels. These pixels are considered better exposed as those with high or low luminance levels.</li>
+    <li>Saturation Weight : The saturation criteria favors highly-saturated pixels. (Note that saturation is only defined for color pixels.)</li>
+</ul>
+
+</body>
+</html>

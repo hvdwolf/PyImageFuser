@@ -12,16 +12,17 @@
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
+import webbrowser
 
 import PySimpleGUI as sg
 import os, sys , tempfile, timeit
 # Necessary for windows
 import requests
 from pathlib import Path
-import cv2
 
 #------- Helper python scripts ----
 import ui_layout
+import ui_actions
 import Settings
 import image_functions
 import program_texts
@@ -158,10 +159,14 @@ def main():
             window.disappear()
             sg.popup(program_texts.Credits, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
             window.reappear()
-        elif event == 'Program parameters':
+        elif event == 'Program buttons':
             #window.disappear()
             program_texts.explain_parameters_popup()
             #window.reappear()
+        elif event == 'Exposure fusion' or event == '_expfuse_help_':
+            webbrowser.open('file://' + os.path.join(os.path.realpath(os.getcwd()),'docs','exposurefusing.html') )
+        elif event == 'Alignment' or event == '_align_help_':
+            webbrowser.open('file://' + os.path.join(os.path.realpath(os.getcwd()), 'docs', 'alignment.html'))
         elif event == 'Preferences' or event =='_btnPreferences_':
             Settings.settings_window()
         elif event == '_select_all_':
@@ -176,6 +181,8 @@ def main():
             if values['_display_selected_'] and len(values['-FILE LIST-']) !=0:
                 image_functions.resizesingletopreview(folder, tmpfolder, values['-FILE LIST-'][0])
                 image_functions.display_preview(window, os.path.join(tmpfolder, values['-FILE LIST-'][0]))
+        elif event == '_preset_opencv_' or event == '_preset_enfuse_':
+            ui_actions.set_fuse_presets(window, values)
         elif event == '_create_preview_':
             # The exposure fusion and aligning has been copied from below page
             # https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/

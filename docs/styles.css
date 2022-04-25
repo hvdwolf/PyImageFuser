@@ -1,5 +1,6 @@
 <!--
-body, th, td, p { font-family: Arial, Helvetica, sans-serif; color: #040498; };
+body, th, td, p, ul, li { font-family: Arial, Helvetica, sans-serif; color: #040498; line-height: 1.5; max-width: 960px;};
+
 tdhead (font-style: strong;);
 .tdhead (font-style: strong;);
 xpsp2 {font-family: Arial, Helvetica, sans-serif; font-size: 8pt; text-align: left; color: #040498; font-style: italic;}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# ui_layout.py.py - This python helper scripts holds the user interface functions
+# ui_layout.py - This python helper scripts holds the user interface functions
 
 # Copyright (c) 2022, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
@@ -14,66 +14,18 @@
 
 import PySimpleGUI as sg
 
-import io, os
-from PIL import Image
-from pathlib import Path
+import os
 
+import ui_actions
 import image_functions
 import program_texts
 
-def which_folder():
-    init_folder = ""
-    sg.user_settings_filename(path=Path.home())
-    start_folder = sg.user_settings_get_entry('imgfolder', Path.home())
-    last_opened_folder = sg.user_settings_get_entry('last_opened_folder', Path.home())
-    if last_opened_folder != Path.home() and os.path.isdir(last_opened_folder):
-        init_folder = last_opened_folder
-    else:
-        init_folder = start_folder
 
-    return init_folder
-
-def display_org_preview(imgfile):
-    try:
-        print("\n\nimgfile ", imgfile)
-        image = Image.open(imgfile)
-        sg.user_settings_filename(path=Path.home())
-        longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
-        image.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
-        bio = io.BytesIO()
-        image.save(bio, format='PNG')
-        return bio.getvalue()
-    except:
-        print("Something went wrong converting ", imgfile)
-        pass
-        return imgfile
-
-def progress_window(message):
-    global thread_done
-    layout = [
-        [sg.Text(message)],
-        [sg.ProgressBar(max_value=100, size=(30, 10), key='bar', metadata=5)],
-        [sg.Button('Close')]
-    ]
-    pwwindow = sg.Window('test', layout, finalize=True)
-
-    pwwindow['bar'].Widget.config(mode='indeterminate')
-
-    while True:
-        event, values = pwwindow.Read(timeout=100)
-        if pwwindow(timeout=100)[0] is None:
-            break
-        if event == 'Close':
-            break
-        if thread_done is True:
-            break
-        pwwindow['bar'].Widget['value'] += pwwindow['bar'].metadata
-    pwwindow.close()
 #----------------------------------------------------------------------------------------------
 #---------------------------------------- Menu ------------------------------------------------
 menu_def = [
                ['&File', ['!&Load files', '---', '&Preferences', 'E&xit']],
-               ['&Help', ['&About...', '&Credits', 'Program parameters',]],
+               ['&Help', ['&About...', '&Credits', 'Program buttons', 'Exposure fusion', 'Alignment', ]],
            ]
 
 #----------------------------------------------------------------------------------------------
@@ -83,16 +35,25 @@ def create_and_show_gui(tmpfolder, startFolder):
 # This creates the complete gui and then returns the gui
 # to pyimagefuser where the events are evaluated
 #----------------------------------------------------------------------------------------------
-#---------------- Main tab for the default settings to make an enfused image  -----------------
+#---------------- Main tab for the default settings to make a exposure fused image  -----------------
 
-    layoutAlignmentMethods = [
-        [sg.Text('Methods to align your images', font=('Calibri', '10', 'bold'))],
-        [sg.Radio('ECC', "RadioAlign", default=True, key='_radio_ecc_', tooltip='The most accurate one, but also the slowest')],
-        [sg.Radio('AlignMTB', "RadioAlign", default=False, key='_radio_alignmtb_', tooltip='General purpose fast alignment')],
-        [sg.Radio('ORB', "RadioAlign", default=False, key='_radio_orb_', tooltip='General purpose more "only stacking" oriented')],
+    layoutAlignmtbbitshift = [
+        [sg.Text('Logarithm to the base of 2 of the maximal\nshift in each dimension.\n5 or 6 is usually good enough.', )],
+        [sg.Combo(values=sorted((3, 4, 5, 6, 7, 8)), default_value=5, size=(2, 1), key='_bitshiftCombo_')],
     ]
+    layoutAlignModels = [
+        [sg.Radio('AlignMTB', "RadioAlign", default=True, key='_radio_alignmtb_', tooltip='General purpose good and fast alignment')],
+        [sg.Radio('ECC', "RadioAlign", default=False, key='_radio_ecc_', tooltip='The most accurate one, but also the slowest')],
+        [sg.Radio('ORB (stacks only)', "RadioAlign", default=False, key='_radio_orb_', tooltip='ORB is a fast keypoint dectector. Use ONLY with perfectly aligned stacks.')],
+    ]
+    layoutAlignmentMethods = [
+        [sg.Frame('Methods to align your images', layoutAlignModels, font=('Calibri', '10', 'bold'))],
+        [sg.VPush()],
+        [sg.Frame("Maximum bit shift (alignMTB only)", layoutAlignmtbbitshift, font=('Calibri', '10', 'bold'))],
+    ]
+
     layoutAlignECCMotionModels = [
-        [sg.Text('Select the motion model (only for ECC):', font=('Calibri', '10', 'bold'))],
+        #[sg.Text('ECC motion model', font=('Calibri', '10', 'bold'))],
         [sg.Text('Top to bottom in decreasing accuracy\n but increasing speed')],
         [sg.Radio('HOMOGRAPHY', "RadioMM", default=True, key='_homography_',)],
         [sg.Radio('AFFINE', "RadioMM", default=False, key='_affine_', )],
@@ -100,7 +61,7 @@ def create_and_show_gui(tmpfolder, startFolder):
         [sg.Radio('TRANSLATION', "RadioMM", default=False, key='_translation_', )],
     ]
     layoutAlignmentTab = [
-        [sg.Column(layoutAlignmentMethods, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutAlignECCMotionModels, vertical_alignment='top')],
+        [sg.Column(layoutAlignmentMethods, vertical_alignment='top'), sg.VSeperator(), sg.Frame('Geometric image transformation models (ECC only)', layoutAlignECCMotionModels, font=('Calibri', '10', 'bold'), vertical_alignment='top')],
         [sg.VPush()],
         [sg.Push(), sg.Button('Help', font=('Calibri', '10', 'bold'), key='_align_help_')]
     ]
@@ -146,8 +107,8 @@ def create_and_show_gui(tmpfolder, startFolder):
     layoutFusing_Presets = [
         [sg.Text('Presets')],
         #[sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
-        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=True, key='_preset_opencv', enable_events=True, tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
-        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=False, key='_preset_enfuse', enable_events=True, tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
+        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=True, key='_preset_opencv_', enable_events=True, tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
+        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=False, key='_preset_enfuse_', enable_events=True, tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
     ]
     layoutExposureFusionAll = [
         [sg.Column(layoutExposureFusion), sg.VSeperator(), sg.Column(layoutFusing_Presets, vertical_alignment='top')],
@@ -165,10 +126,10 @@ def create_and_show_gui(tmpfolder, startFolder):
 #--------------------------- Left and right panel -----------------
     layoutLeftPanel = [
         [sg.In(size=(1, 1), enable_events=True, key="-FILES-", visible=False),
-            sg.FilesBrowse(button_text = 'Load Images', font = ('Calibri', 10, 'bold'), initial_folder=which_folder(), file_types = program_texts.image_formats, key='_btnLoadImages_'),
+            sg.FilesBrowse(button_text = 'Load Images', font = ('Calibri', 10, 'bold'), initial_folder=ui_actions.which_folder(), file_types = program_texts.image_formats, key='_btnLoadImages_'),
             sg.Button('Preferences', font = ('Calibri', 10, 'bold'), key='_btnPreferences_')],
         [sg.Text('Images Folder:')],
-        [sg.Text(size=(60, 1), key='-FOLDER-', font = ('Calibri', 10, 'italic'))],
+        [sg.Text( key='-FOLDER-', font = ('Calibri', 10, 'italic'), )],
         #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Multiline(size=(40, 20), visible=False, disabled=True, echo_stdout_stderr=False, key = '_sgOutput_')],
         [sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Output(size=(40, 20), visible=False, key = '_sgOutput_')],
         #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), ],
@@ -179,7 +140,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
 
     layoutRightPanel = [
-        [sg.Image(display_org_preview(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','preview.png')), key='-IMAGE-')],
+        [sg.Image(ui_actions.display_org_preview(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','preview.png')), key='-IMAGE-')],
         [sg.Button('(Re)Create Preview', font = ('Calibri', 10, 'bold'), key='_create_preview_')],
     ]
 
