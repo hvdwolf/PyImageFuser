@@ -294,7 +294,8 @@ def create_ais_command(all_values, folder, tmpfolder, type):
 
     file_functions.remove_files(os.path.join(tmpfolder, '*ais*'))
     if platform.system() == 'Windows':
-        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'align_image_stack.exe'))
+        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'align_image_stack.exe'))
+        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'align_image_stack.exe')
         ais_string = cmd_string
     else:
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'align_image_stack'))
@@ -395,12 +396,13 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
     cmd_list = []
     enf_string = ""
     if platform.system() == 'Windows':
-        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'enfuse.exe'))
+        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'enfuse.exe'))
+        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'enfuse.exe')
         enf_string = cmd_string
     else:
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
         check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
-        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
             cmd_string = 'enfuse'
         else:
             cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'enfuse')
@@ -428,7 +430,7 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
     elif type == 'full_ais':
         cmd_string += ' -v ' + os.path.join(tmpfolder, 'ais_001*') + ' -o "' + newImageFileName + '" '
         cmd_list.append('-v')
-        cmd_list.append('o')
+        cmd_list.append('-o')
         cmd_list.append(newImageFileName)
         cmd_list.append(os.path.join(tmpfolder, 'ais_001*'))
         # Check enfuse file output format

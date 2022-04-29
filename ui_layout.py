@@ -11,6 +11,7 @@
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
+import platform
 
 import PySimpleGUI as sg
 
@@ -153,10 +154,18 @@ def create_and_show_gui(tmpfolder, startFolder):
          sg.Checkbox('Display selected image when clicked on', key='_display_selected_'),],
     ]
 
-    layoutRightPanel = [
-        [sg.Image(ui_actions.display_org_preview(file_functions.resource_path(os.path.join('images','preview.png'))), key='-IMAGE-')],
-        [sg.Button('(Re)Create Preview', font = ('Calibri', 10, 'bold'), key='_create_preview_'), sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
-    ]
+    if platform.system() == 'Windows':
+        layoutRightPanel = [
+            [sg.Image(ui_actions.display_org_preview(os.path.join(os.path.realpath('.')),'images', 'preview.png'), key='-IMAGE-')],
+            [sg.Button('(Re)Create Preview', font=('Calibri', 10, 'bold'), key='_create_preview_'),
+             sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
+        ]
+    else:
+        layoutRightPanel = [
+            [sg.Image(ui_actions.display_org_preview(file_functions.resource_path(os.path.join('images','preview.png'))), key='-IMAGE-')],
+            [sg.Button('(Re)Create Preview', font=('Calibri', 10, 'bold'), key='_create_preview_'),
+             sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
+        ]
 
 #----------------------------------------------------------------------------------------------
 #--------------------------- Final Window layout -----------------

@@ -1,5 +1,4 @@
 PySimpleGUI
-opencv-python
 requests
 Pillow
 
