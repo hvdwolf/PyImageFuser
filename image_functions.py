@@ -19,8 +19,7 @@ import tkinter as tk
 import PySimpleGUI as sg
 from PIL import Image, ExifTags  # to manipulate images and read exif
 from PIL.ExifTags import TAGS
-#import cv2
-#import numpy as np
+
 import file_functions
 
 # Use 50 mm as stand for focal length
@@ -298,7 +297,13 @@ def create_ais_command(all_values, folder, tmpfolder, type):
         cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'align_image_stack.exe'))
         ais_string = cmd_string
     else:
-        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'align_image_stack'))
+        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'align_image_stack'))
+        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
+            cmd_string = 'align_image_stack'
+        else:
+            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'align_image_stack')
+
         #ais_string = cmd_string
     if (type == 'preview'):
         # cmd_string = 'align_image_stack --gpu -a ' + os.path.join(tmpfolder,'preview_ais_001') + ' -v -t 2 -C -i '
@@ -393,8 +398,12 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
         cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'enfuse.exe'))
         enf_string = cmd_string
     else:
-        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
-        #enf_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
+        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
+        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
+            cmd_string = 'enfuse'
+        else:
+            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'enfuse')
     if type == 'preview_ais':
         cmd_string += ' -v --compression=90 ' + os.path.join(tmpfolder, 'preview_ais_001*') + ' -o ' + os.path.join(tmpfolder, 'preview.jpg ')
         cmd_list.append('-v')
@@ -610,6 +619,8 @@ def get_filename_images(values, folder):
 
 def copy_exif_info(reference_image, imagepath):
 
+    print('reference_image ', reference_image)
+    print('imagepath ', imagepath)
     ref_img = Image.open(reference_image)
     ref_exifd = ref_img.getexif()
     ref_img.close()

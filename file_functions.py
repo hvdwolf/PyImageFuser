@@ -12,7 +12,7 @@
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
 
-import glob, os, shutil, sys, cv2
+import glob, os, shutil, sys
 
 import PySimpleGUI as sg
 
@@ -27,6 +27,7 @@ def resource_path(relative_path):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
+        print('pyinstaller temp path: ', base_path)
     except Exception:
         base_path = os.path.realpath(".")
 
@@ -108,20 +109,6 @@ def getFileName(folder):
 
     window.close()
     return folder, fileName
-
-def save_file(imgFile, cv2_image):
-    basename, extension = os.path.splitext(imgFile)
-    print('\n basename, extension: ', basename, ', ', extension)
-    ext = extension.lower()
-    if ext == '.tif' or ext == '.tiff':
-        cv2.imwrite(imgFile, cv2_image, )
-    elif ext == '.png':
-        cv2.imwrite(imgFile, cv2_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
-    elif ext == '.jpg' or ext == '.jpeg':
-        cv2.imwrite(imgFile, cv2_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))])
-    elif ext == '' or len(ext) == 0: # which means we add save to the default jpg format
-        cv2.imwrite(imgFile + '.jpg', cv2_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))])
-
 
 def check_filename(values, fileName):
 

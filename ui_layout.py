@@ -17,6 +17,7 @@ import PySimpleGUI as sg
 import os
 
 import ui_actions
+import file_functions
 import image_functions
 import program_texts
 
@@ -153,7 +154,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
 
     layoutRightPanel = [
-        [sg.Image(ui_actions.display_org_preview(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','preview.png')), key='-IMAGE-')],
+        [sg.Image(ui_actions.display_org_preview(file_functions.resource_path(os.path.join('images','preview.png'))), key='-IMAGE-')],
         [sg.Button('(Re)Create Preview', font = ('Calibri', 10, 'bold'), key='_create_preview_'), sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
     ]
 
