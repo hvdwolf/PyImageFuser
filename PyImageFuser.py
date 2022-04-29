@@ -121,6 +121,7 @@ def main():
     print("settingsfile: ",settingsFile)
     print("tmpdir", os.path.realpath(tempfile.gettempdir()))
     print("current path ", os.path.realpath('.'))
+    #print(getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller'))
 
     # Display the GUI to the user
     window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)
@@ -243,8 +244,8 @@ def main():
                     display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
-                    print('create preview reference_image: ', reference_image)
-                    print('null_image', null_image)
+                    #print('create preview reference_image: ', reference_image)
+                    #print('null_image', null_image)
                     if reference_image == "":
                         reference_image = null_image
                     filepath = image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
