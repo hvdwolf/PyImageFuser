@@ -123,6 +123,18 @@ def save_file(imgFile, cv2_image):
         cv2.imwrite(imgFile + '.jpg', cv2_image, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))])
 
 
+def check_filename(values, fileName):
+
+    basename, extension = os.path.splitext(fileName)
+    ext = extension.lower()
+    #if ext == '' or len(ext) == 0: # which means we will save to the default jpg format
+    if ext == '' or len(ext) == 0: # which means the user did not give an extension
+        if values['_jpg_']:
+            fileName = fileName + '.jpg'
+        else:
+            fileName = fileName + '.tif'
+
+    return fileName
 
 
 # This functions gets the file sizes of the preview images

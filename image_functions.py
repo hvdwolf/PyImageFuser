@@ -17,10 +17,10 @@ import io, os, math, platform, sys, tempfile
 from pathlib import Path
 import tkinter as tk
 import PySimpleGUI as sg
-from PIL import Image  # to manipulate images and read exif
+from PIL import Image, ExifTags  # to manipulate images and read exif
 from PIL.ExifTags import TAGS
-import cv2
-import numpy as np
+#import cv2
+#import numpy as np
 import file_functions
 
 # Use 50 mm as stand for focal length
@@ -52,7 +52,7 @@ def reworkTag(tagtuple, precision):
 
 def reworkExposure(tagtuple):
     value = "1/" + str(tagtuple[1] // 10)
-    return value
+    return str(value)
 
 
 # Read all the exif info from the loaded images, if available
@@ -64,25 +64,33 @@ def get_all_exif_info(filename):
     :type filename:    (str)
     '''
     exif_dictionary = {}
+    reference_image = ""
 
     img = Image.open(filename)
     exif = img.getexif()
     if exif is not None:
+        print('image: ', filename)
         exif_dictionary['filename'] = img.filename
         exif_dictionary['width x height'] = img.size
         for k, v in img.getexif().items():
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
+            if (tag == 'ExposureBiasValue'):
+                print(TAGS.get(k), ' : ', v)
+                #print(tag, ' : ', v)
+                if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                   reference_image = filename
+                   print('reference_image: ', reference_image)
     else:
         exif_dictionary['no exif'] = 'no exif'
 
-    return exif_dictionary
+    return reference_image, exif_dictionary
 
 
 # Read some basic exif info from a file
 def get_basic_exif_info_from_file(filename, output):
     exif_dictionary = {}
-    correctedfocal = 50
+    reference_image =""   # This image contains the image with Exposure bias value/Exposure compensation 0
 
     img = Image.open(filename)
     exifd = img.getexif()
@@ -101,11 +109,11 @@ def get_basic_exif_info_from_file(filename, output):
         elif (TAGS.get(k) == 'MaxApertureValue'):  # ID=0x9205
             # print(TAGS.get(k), " : ", reworkTag(v, 1))
             tag = TAGS.get(k)
-            exif_dictionary[tag] = reworkTag(v, 1)
+            exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'FocalLength'):  # id=0x920a
             # print(TAGS.get(k), " : ", reworkTag(v, 1))
             tag = TAGS.get(k)
-            exif_dictionary[tag] = reworkTag(v, 1)
+            exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'FocalLengthIn35mmFilm'):  # id=0xa405
             # print(TAGS.get(k), " : ", v)
             tag = TAGS.get(k)
@@ -117,21 +125,28 @@ def get_basic_exif_info_from_file(filename, output):
         elif (TAGS.get(k) == 'ExposureTime'):  # id=0x829a
             # print(TAGS.get(k), " : ", reworkExposure(v))
             tag = TAGS.get(k)
-            exif_dictionary[tag] = reworkExposure(v)
+            exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'ExposureBiasValue'):  # id=0x9204
-            # print("ExposureCompensation\t: ", reworkTag(v, 1))
             tag = TAGS.get(k)
-            exif_dictionary[tag] = reworkTag(v, 1)
+            exif_dictionary[tag] = v
+            #print("ExposureCompensation\t: ", v)
+            if v == '0.0' or v == '0':
+                reference_image = filename
+                print('reference_image ', reference_image)
         elif (TAGS.get(k) == 'FNumber'):  # id=0x829d
             # print(TAGS.get(k), " : ", reworkTag(v, 1))
             tag = TAGS.get(k)
-            exif_dictionary[tag] = reworkTag(v, 1)
+            exif_dictionary[tag] = v
+        elif (TAGS.get(k) == 'Orientation'):  # id=0x274d
+            tag = TAGS.get(k)
+            exif_dictionary[tag] = v
+            #print(TAGS.get(k), " : ", v)
 
     if (output == 'print'):
         print('\n\n', exif_dictionary)
         # print("\n\n",exif_dictionary['ExposureBiasValue'])
 
-    return exif_dictionary
+    return reference_image, exif_dictionary
 
 
 # This function resizes the original selected images when
@@ -196,17 +211,258 @@ def resizesingletopreview(folder, tmpfolder, image):
         else:
             img += "\"" + orgfile + "\" "
         try:
-            preview_img = Image.open(orgfile)
-            exifd = preview_img.getexif()  # Get all exif data from original image
+            org_img = Image.open(orgfile)
+            exifd = org_img.getexif()  # Get all exif data from original image
             sg.user_settings_filename(path=Path.home())
             longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
-            preview_img.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
+            org_img.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
             # Get necessary tags and write them to resized images
             # for k, v in preview_img.getexif().items():
-            preview_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
+            org_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
         except Exception as e:
             PyImageFuser.logger(e)
             # pass
+
+
+def check_ais_params(all_values):
+    '''
+    This function parses all align_image_stack settings and returns them
+    to the create_ais_command
+
+    :param all_values:   This is the dictionary containing all UI key variables
+    :type all_values:    (Dict[Any, Any]) - {Element_key : value}
+    '''
+    cmd_string = ""
+    cmd_list = []
+    # print('autoCrop ',all_values['_autoCrop_'] )
+    if all_values['_autoCrop_']:
+        cmd_string += '-C '
+        cmd_list.append('-C')
+    if all_values['_useGPU_']:
+        cmd_string += '--gpu  '
+        # cmd_list.append('--gpu')
+    if all_values['_fffImages_']:
+        cmd_string += '-e '
+        cmd_list.append('-e')
+    if all_values['_fovOptimize_']:
+        cmd_string += '-m '
+        cmd_list.append('-m')
+    if all_values['_optimizeImgCenter_']:
+        cmd_string += '-i '
+        cmd_list.append('-i')
+    if all_values['_optimizeRadialDistortion_']:
+        cmd_string += '-d '
+        cmd_list.append('-d')
+    #if all_values['_linImages_']:
+    #    cmd_string += '-l '
+    #    cmd_list.append('-l')
+    if not all_values['_autoHfov']:
+        cmd_string += '-f ' + all_values['_inHFOV_'] + ' '
+        cmd_list.append('-f')
+        cmd_list.append(all_values['_inHFOV_'])
+    if not all_values['_inNoCP_'] == '8':
+        cmd_string += '-c ' + all_values['_inNoCP_'] + ' '
+        cmd_list.append('-c')
+        cmd_list.append(all_values['_inNoCP_'])
+    if not all_values['_removeCPerror_'] == '3':
+        cmd_string += '-t ' + all_values['_removeCPerror_'] + ' '
+        cmd_list.append('-t')
+        cmd_list.append(all_values['_removeCPerror_'])
+    if not all_values['_inScaleDown_'] == '1':
+        cmd_string += '-s ' + all_values['_inScaleDown_'] + ' '
+        cmd_list.append('-s')
+        cmd_list.append(all_values['_inScaleDown_'])
+    if not all_values['_inGridsize_'] == '5':
+        cmd_string += '-g ' + all_values['_inGridsize_'] + ' '
+        cmd_list.append('-g')
+        cmd_list.append(all_values['_inGridsize_'])
+
+    return cmd_string, cmd_list
+
+
+# This function creates the basic align_image)stack command for the several options
+# It uses the string from check_ais_params to complete the command string
+def create_ais_command(all_values, folder, tmpfolder, type):
+    '''
+    This function creates the basic align_image)stack command for the several options
+    It uses the string/list from check_ais_params to complete the command string
+
+    :param all_values:   This is the dictionary containing all UI key variables
+    :type all_values:    (Dict[Any, Any]) - {Element_key : value}
+    '''
+    cmd_string = ""
+    cmd_list = []
+
+    file_functions.remove_files(os.path.join(tmpfolder, '*ais*'))
+    if platform.system() == 'Windows':
+        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'align_image_stack.exe'))
+        ais_string = cmd_string
+    else:
+        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'align_image_stack'))
+        #ais_string = cmd_string
+    if (type == 'preview'):
+        # cmd_string = 'align_image_stack --gpu -a ' + os.path.join(tmpfolder,'preview_ais_001') + ' -v -t 2 -C -i '
+        cmd_string += ' -a ' + os.path.join(tmpfolder, 'preview_ais_001') + ' '
+        # cmd_list.append('--gpu')
+        cmd_list.append('-a')
+        cmd_list.append(os.path.join(tmpfolder, 'preview_ais_001'))
+    else:
+        cmd_string += ' -a ' + os.path.join(tmpfolder, 'ais_001') + ' '
+        cmd_list.append('-a')
+        cmd_list.append(os.path.join(tmpfolder, 'ais_001'))
+    tmp_string, tmp_list = check_ais_params(all_values)
+    cmd_string += tmp_string
+    cmd_list.extend(tmp_list)
+
+    files = all_values['-FILE LIST-']
+    for file in files:
+        if type == 'preview':
+            nfile = os.path.join(tmpfolder, file)
+        else:
+            nfile = os.path.join(folder, file)
+        if platform.system() == 'Windows':
+            cmd_string += "\"" + nfile.replace("/", "\\") + "\" "
+            # cmd_list.append("\"" + nfile.replace("/", "\\") + "\" ")
+            cmd_list.append(nfile.replace("/", "\\"))
+        else:
+            cmd_string += "\"" + nfile + "\" "
+            cmd_list.append(nfile)
+    # print("\n\n", cmd_string, "\n\n")
+    # return cmd_string, cmd_list
+    if platform.system() == 'Windows':
+        return ais_string, cmd_list
+    else:
+        return cmd_string, cmd_list
+
+
+# This function parses all enfuse settings and returns them
+# to the create_enfuse_command
+def check_enfuse_params(all_values):
+    cmd_string = ""
+    cmd_list = []
+    if not all_values['_levels_'] == '29':
+        cmd_string += '--levels=' + str(int(all_values['_levels_'])) + ' '
+        cmd_list.append('--levels=' + str(int(all_values['_levels_'])))
+    if not all_values['_exposure_weight_'] == '1.0':
+        cmd_string += '--exposure-weight=' + str(all_values['_exposure_weight_']) + ' '
+        cmd_list.append('--exposure-weight=' + str(all_values['_exposure_weight_']))
+    if not all_values['_saturation_weight_'] == '0.2':
+        cmd_string += '--saturation-weight=' + str(all_values['_saturation_weight_']) + ' '
+        cmd_list.append('--saturation-weight=' + str(all_values['_saturation_weight_']))
+    if not all_values['_contrast_weight_'] == '0':
+        cmd_string += '--contrast-weight=' + str(all_values['_contrast_weight_']) + ' '
+        cmd_list.append('--contrast-weight=' + str(all_values['_contrast_weight_']))
+    if not all_values['_entropy_weight_'] == '0':
+        cmd_string += '--entropy-weight=' + str(all_values['_entropy_weight_']) + ' '
+        cmd_list.append('--entropy-weight=' + str(all_values['_entropy_weight_']))
+    if not all_values['_exposure_optimum_'] == '0.5':
+        cmd_string += '--exposure-optimum=' + str(all_values['_exposure_optimum_']) + ' '
+        cmd_list.append('--exposure-optimum=' + str(all_values['_exposure_optimum_']))
+    if not all_values['_exposure_width_'] == '0.2':
+        cmd_string += '--exposure-width=' + str(all_values['_exposure_width_']) + ' '
+        cmd_list.append('--exposure-width=' + str(all_values['_exposure_width_']))
+    return cmd_string, cmd_list
+
+
+def check_enfuse_output_format(all_values):
+    cmd_string = ""
+    cmd_list = []
+    if all_values['_jpg_']:
+        if all_values['_jpgCompression_'] == 90:
+            cmd_string += '--compression=90 '
+            cmd_list.append('--compression=90')
+        else:
+            cmd_string += '--compression=' + str(int(all_values['_jpgCompression_'])) + ' '
+            cmd_list.append('--compression=' + str(int(all_values['_jpgCompression_'])))
+    else:  # User selected tiff output
+        cmd_string += '--compression=' + all_values['_tiffCompression'] + ' --depth='
+        if all_values['_tiff8_']:
+            cmd_string += '8 '
+        elif all_values['_tif16_']:
+            cmd_string += '16 '
+        else:
+            cmd_string += '32 '
+    return cmd_string, cmd_list
+
+
+def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName):
+    cmd_string = ""
+    cmd_list = []
+    enf_string = ""
+    if platform.system() == 'Windows':
+        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'enfuse.exe'))
+        enf_string = cmd_string
+    else:
+        cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
+        #enf_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
+    if type == 'preview_ais':
+        cmd_string += ' -v --compression=90 ' + os.path.join(tmpfolder, 'preview_ais_001*') + ' -o ' + os.path.join(tmpfolder, 'preview.jpg ')
+        cmd_list.append('-v')
+        cmd_list.append('--compression=90')
+        cmd_list.append('-o')
+        cmd_list.append(os.path.join(tmpfolder, 'preview.jpg'))
+        cmd_list.append(os.path.join(tmpfolder, 'preview_ais_001*'))
+    elif type == 'preview':
+        cmd_string += ' -v --compression=90 ' + ' -o ' + os.path.join(tmpfolder, 'preview.jpg ')
+        cmd_list.append('-v')
+        cmd_list.append('--compression=90')
+        cmd_list.append(os.path.join(tmpfolder, 'preview.jpg'))
+        files = all_values['-FILE LIST-']
+        for file in files:
+            nfile = os.path.join(tmpfolder, file)
+            if platform.system() == 'Windows':
+                cmd_string += "\"" + nfile.replace("/", "\\") + "\" "
+                cmd_list.append(nfile.replace("/", "\\"))
+            else:
+                cmd_string += "\"" + nfile + "\" "
+        # print("\n\n", cmd_string, "\n\n")
+    elif type == 'full_ais':
+        cmd_string += ' -v ' + os.path.join(tmpfolder, 'ais_001*') + ' -o "' + newImageFileName + '" '
+        cmd_list.append('-v')
+        cmd_list.append('o')
+        cmd_list.append(newImageFileName)
+        cmd_list.append(os.path.join(tmpfolder, 'ais_001*'))
+        # Check enfuse file output format
+        # cmd_string += check_enfuse_output_format(all_values)
+        tmp_string, tmp_list = check_enfuse_output_format(all_values)
+        cmd_string += tmp_string
+        cmd_list.extend(tmp_list)
+    else:  # full enfuse without ais
+        # cmd_string = 'enfuse -v --level=29 --compression=90 ' + ' -o ' + newImageFileName
+        cmd_string += ' -v ' + ' -o "' + newImageFileName + '" '
+        cmd_list.append('-v')
+        cmd_list.append('-o')
+        cmd_list.append(newImageFileName)
+        # Check enfuse file output format
+        # cmd_string += check_enfuse_output_format(all_values)
+        tmp_string, tmp_list = check_enfuse_output_format(all_values)
+        cmd_string += tmp_string
+        cmd_list.extend(tmp_list)
+        files = all_values['-FILE LIST-']
+        for file in files:
+            nfile = os.path.join(folder, file)
+            if platform.system() == 'Windows':
+                cmd_string += "\"" + nfile.replace("/", "\\") + "\" "
+                cmd_list.append(nfile.replace("/", "\\"))
+            else:
+                cmd_string += "\"" + nfile + "\" "
+        # print("\n\n", cmd_string, "\n\n")
+    # Finally add our enfuse params
+    tmp_string, tmp_list = check_enfuse_params(all_values)
+    if platform.system() == 'Windows':
+        cmd_string = tmp_string
+    else:
+        cmd_string += tmp_string
+    cmd_list.extend(tmp_list)
+    print('finale end create_enfuse_command')
+    print('cmd_string ', cmd_string)
+    print('cmd_list ', cmd_list)
+
+    # return cmd_string
+    if platform.system() == 'Windows':
+        return enf_string, cmd_list
+    else:
+        return cmd_string, cmd_list
 
 
 def get_curr_screen_geometry():
@@ -240,6 +496,7 @@ def display_preview(mainwindow, imgfile):
         # image_functions.get_basic_exif_info(imgfile, 'print')
         # print("\n\nimgfile ", imgfile)
         image = Image.open(imgfile)
+        image = reorient_img(image)
         sg.user_settings_filename(path=Path.home())
         longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
         image.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
@@ -258,15 +515,32 @@ def displayImage(imgpath):
     newImg = Image.open(rawimgpath)
     newImg.show()
 
+def reorient_img(pil_img):
+    img_exif = pil_img.getexif()
+
+    if len(img_exif):
+        if img_exif[274] == 3:
+            pil_img = pil_img.transpose(Image.ROTATE_180)
+        elif img_exif[274] == 6:
+            pil_img = pil_img.transpose(Image.ROTATE_270)
+        elif img_exif[274] == 8:
+            pil_img = pil_img.transpose(Image.ROTATE_90)
+
+    return pil_img
 
 def displayImageWindow(imgpath):
     # If the user did not specify a file name extension, the program added ".jpg"
+    '''
     basename, extension = os.path.splitext(imgpath)
     ext = extension.lower()
     if ext == '' or len(ext) == 0:
         rawimgpath = str(imgpath + '.jpg')
+    else:
+        rawimgpath = str(imgpath)
     print('displaying your image: ', rawimgpath, '\n')
-    newImg = Image.open(rawimgpath)
+    '''
+    tmpImg = Image.open(str(imgpath))
+    newImg = reorient_img(tmpImg)
     # imgsize = newImg.size
     scrwidth, scrheight = get_curr_screen_geometry()
     # print('scrwidth x scrheight: ' + str(scrwidth) + 'x' + str(scrheight))
@@ -334,278 +608,49 @@ def get_filename_images(values, folder):
 
     return folderFileName[1], full_images
 
+def copy_exif_info(reference_image, imagepath):
 
-# Mostly copied from https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
-def align_fuse(all_values, images, tmpfolder, filename_type, align_YN):
-    """
-    This function uses the opencv options to align (optionally, but default)
-    and then exposure fuse the images
-    the images are either the resized images for the preview, or the full images for the final result
+    ref_img = Image.open(reference_image)
+    ref_exifd = ref_img.getexif()
+    ref_img.close()
+    pil_img = Image.open(imagepath)
+    pil_img.save(imagepath, "JPEG", exif=ref_exifd)
+    pil_img.close()
+    '''
+    rot_img = Image.open(imagepath)
+    img_exif = rot_img.getexif()
 
-    :param all_values:      This is the dictionary containing all UI key variables
-    :type all_values:       (Dict[Any, Any]) - {Element_key : value}
-    :param images:          The images to (optionally) align and fuse
-    :type images:           (list)
-    :param tmpfolder:       The dynamically created work folder in the OS temp folder
-    :type tmpfolder:        (str)
-    :param filename_type:   Either the real final filename or a string 'preview'
-    :type filename_type:    (str)
-    :param align_YN:        Determines whether the user wants to align (default) or not
-    :type align_YN:         (bool)
-    """
-    work_images = []
-    processed_images = None
-    # processed_work_images = []
-    for image in images:
-        im = cv2.imread(image)
-        work_images.append(im)
+    if len(img_exif):
+        print('img_exif[274] ', img_exif[274])
+        if img_exif[274] == 3:
+            pil_img = pil_img.transpose(Image.ROTATE_180)
+        elif img_exif[274] == 6:
+            pil_img = pil_img.transpose(Image.ROTATE_270)
+        elif img_exif[274] == 8:
+            pil_img = pil_img.transpose(Image.ROTATE_90)
 
-    if align_YN:  # True
-        if filename_type == 'preview':
-            print("Aligning preview images using alignMTB ...\n")
-        else:
-            print("Aligning full size images using alignMTB ...\n")
-        # alignMTB = cv2.createAlignMTB()
-        alignMTB = cv2.createAlignMTB(int(all_values['_bitshiftCombo_']))
-        alignMTB.process(work_images, work_images)
+        pil_img.save(imagepath)
+        pil_img.close()
+    #return pil_img
 
-    print("\nMerging using Exposure Fusion ...\n")
-    mergeMertens = cv2.createMergeMertens()
-    mergeMertens.setContrastWeight(all_values['_contrast_weight_'])
-    mergeMertens.setExposureWeight(all_values['_exposure_weight_'])
-    mergeMertens.setSaturationWeight(all_values['_saturation_weight_'])
-    exposureFusion = mergeMertens.process(work_images)
-    if filename_type == 'preview':
-        print("\nSaving preview image ...\n")
-        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY),
-                                                                                   int(sg.user_settings_get_entry(
-                                                                                       '_jpgCompression_',
-                                                                                       '90'))])  # * 255 to get an 8-bit image
-    else:
-        print("\nSaving finale fused image ...\n", str(filename_type), "\n")
-        cv2_image = exposureFusion * 255
-        file_functions.save_file(str(filename_type), cv2_image)
-        # cv2.imwrite(str(filename_type), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY), int(sg.user_settings_get_entry('_jpgCompression_', '90'))]) # * 255 to get an 8-bit image; jpg_quality=(int)quality?
+    try:
+        image = Image.open(imagepath)
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+        exif = dict(image._getexif().items())
 
+        if exif[orientation] == 3:
+            image = image.transpose(Image.ROTATE_180)
+        elif exif[orientation] == 6:
+            image = image.transpose(Image.ROTATE_270)
+        elif exif[orientation] == 8:
+            image = image.transpose(Image.ROTATE_90)
+        image.save(imagepath)
+        image.close()
 
-# Mostly copied from https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
-def exposure_fuse(all_values, images, tmpfolder, filename_type):
-    """
-    This function uses the opencv options to exposure fuse the images
-    the images are either the resized images for the preview, or the full images for the final result
-
-    :param all_values:      This is the dictionary containing all UI key variables
-    :type all_values:       (Dict[Any, Any]) - {Element_key : value}
-    :param images:          The images to (optionally) align and fuse
-    :type images:           (list)
-    :param tmpfolder:       The dynamically create work folder in the OS temp folder
-    :type tmpfolder:        (str)
-    :param filename_type:   Either the real final filename or a string 'preview'
-    :type filename_type:    (str)
-    """
-    work_images = []
-    processed_images = None
-    # processed_work_images = []
-    for image in images:
-        im = cv2.imread(image)
-        work_images.append(im)
-
-    print("\nMerging using Exposure Fusion ...\n")
-    mergeMertens = cv2.createMergeMertens()
-    mergeMertens.setContrastWeight(all_values['_contrast_weight_'])
-    mergeMertens.setExposureWeight(all_values['_exposure_weight_'])
-    mergeMertens.setSaturationWeight(all_values['_saturation_weight_'])
-    exposureFusion = mergeMertens.process(work_images)
-    if filename_type == 'preview':
-        print("\nSaving preview image ...\n")
-        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), exposureFusion * 255, [int(cv2.IMWRITE_JPEG_QUALITY),
-                                                                                   int(sg.user_settings_get_entry(
-                                                                                       '_jpgCompression_',
-                                                                                       '90'))])  # * 255 to get an 8-bit image
-    else:
-        print("\nSaving finale fused image ...\n")
-        cv2_image = exposureFusion * 255
-        file_functions.save_file(str(filename_type), cv2_image)
-
-
-def do_align_and_noise_reduction(images, folder, fileName, values, tmpfolder):
-    """
-    This code is copied from: https://github.com/maitek/image_stacking
-    Only some merging of code and minor changes were applied
-
-    :param images:      The images to align and reduce noise off
-    :type images:       (list)
-    :param folder:      folder that contains original images
-    :type folder:       (str)
-    :param fileName:    filename that user gives to final image when stacking
-    :type fileName:     (str)
-    :param values:      This is the dictionary containing all UI key variables
-    :type values:       (Dict[Any, Any]) - {Element_key : value}
-    :param tmpfolder:   The dynamically created work folder in the OS temp folder
-    :type tmpfolder:    (str)
-    """
-    strBefore = '\nimage before aligning: '
-    strAfter = '\nimage after aligning: '
-    aligned_images = []
-
-    if values['_radio_ecc_']:  # ECC => Enhanced Correlation Coefficient
-        warp_mode = ''
-        print('\n\nAligning images using ECC via\n\n')
-
-        first_image = None
-        stacked_image = None
-
-        for image in images:
-            tmpfilename = os.path.basename(image)
-            basename, ext = os.path.splitext(tmpfilename)
-            print(strBefore, image)
-            image = cv2.imread(image, 1).astype(np.float32) / 255
-            print(image)
-
-            if first_image is None:
-                # convert to gray scale floating point image
-                first_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                stacked_image = image
-                if tmpfolder != '':
-                    # newFile = os.path.join(tmpfolder, basename + '.png')
-                    newFile = os.path.join(tmpfolder, basename + '.ppm')  # Should be 3x faster than png
-                    aligned_images.append(newFile)
-                    print(strAfter, newFile)
-                    newImage = (image * 255).astype(np.uint8)
-                    cv2.imwrite(str(newFile), newImage)
-            else:
-                # Estimate perspective transform
-                if values['_homography_']:
-                    warp_matrix = np.eye(3, 3, dtype=np.float32)  # cv2.MOTION_HOMOGRAPHY
-                    s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image,
-                                                          warp_matrix, cv2.MOTION_HOMOGRAPHY)
-                else:
-                    warp_matrix = np.eye(2, 3, dtype=np.float32)  # all other warp modes
-                    if values['_affine_']:
-                        warp_mode = cv2.MOTION_AFFINE
-                    elif values['_euclidean_']:
-                        warp_mode = cv2.MOTION_EUCLIDEAN
-                    elif values['_translation_']:
-                        warp_mode = cv2.MOTION_TRANSLATION
-                    # Start using Criteria parameter, specifying the termination criteria of the ECC algorithm;
-                    # Criteria.epsilon defines the threshold of the increment in the correlation coefficient between two iterations
-                    # (a negative Criteria.epsilon makes Criteria.maxcount the only termination criterion).
-                    # Default values are: struct('type','Count+EPS', 'maxCount',50, 'epsilon',0.001)
-                    number_of_iterations = 5000
-                    termination_eps = 1e-10;
-                    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations, termination_eps)
-                    # specify criteria as last parameter in the cv2.findTransformECC
-                    # like cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode, criteria )
-                    s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image,
-                                                          warp_matrix, warp_mode, criteria)
-                    # s, warp_matrix = cv2.findTransformECC(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), first_image, warp_matrix, warp_mode,)
-                w, h, _ = image.shape
-
-                # Align image to first image
-                if values['_homography_']:
-                    image = cv2.warpPerspective(image, warp_matrix, (h, w))  # HOMOGRAPHY
-                else:
-                    image = cv2.warpAffine(image, warp_matrix,
-                                           (h, w))  # Use warpAffine for Translation, Euclidean and Affine
-                stacked_image += image
-                if tmpfolder != '':
-                    # newFile = os.path.join(tmpfolder, basename + '.png')
-                    newFile = os.path.join(tmpfolder, basename + '.ppm')  # Should be 3x faster than png
-                    aligned_images.append(newFile)
-                    print(strAfter, newFile)
-                    newImage = (image * 255).astype(np.uint8)
-                    cv2.imwrite(str(newFile), newImage)
-        if folder != '' and fileName != '':
-            stacked_image /= len(images)
-            stacked_image = (stacked_image * 255).astype(np.uint8)
-            file_functions.save_file(str(os.path.join(folder, fileName)), stacked_image)
-
-        return aligned_images
-
-    else:  # We use the ORB method => Images KeyPoint matching
-        print('\n\nDoing keypoint detection using ORB\n\n')
-        orb = cv2.ORB_create()
-
-        # disable OpenCL to because of bug in ORB in OpenCV 3.1
-        cv2.ocl.setUseOpenCL(False)
-
-        stacked_image = None
-        first_image = None
-        first_kp = None
-        first_des = None
-        for image in images:
-            tmpfilename = os.path.basename(image)
-            basename, ext = os.path.splitext(tmpfilename)
-            print(strBefore, image)
-            image = cv2.imread(image, 1)
-            imageF = image.astype(np.float32) / 255
-            print(imageF)
-
-            # compute the descriptors with ORB
-            kp = orb.detect(image, None)
-            kp, des = orb.compute(image, kp)
-
-            # create BFMatcher object
-            matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-            if first_image is None:
-                # Save keypoints for first image
-                stacked_image = imageF
-                first_image = image
-                first_kp = kp
-                first_des = des
-                if tmpfolder != '':
-                    # newFile = os.path.join(tmpfolder, basename + '.png')
-                    newFile = os.path.join(tmpfolder, basename + '.ppm')  # Should be 3x faster than png
-                    aligned_images.append(newFile)
-                    print(strAfter, newFile)
-                    newImage = (imageF * 255).astype(np.uint8)
-                    cv2.imwrite(str(newFile), newImage)
-            else:
-                # Find matches and sort them in the order of their distance
-                matches = matcher.match(first_des, des)
-                matches = sorted(matches, key=lambda x: x.distance)
-
-                src_pts = np.float32(
-                    [first_kp[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-                dst_pts = np.float32(
-                    [kp[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
-
-                # Estimate perspective transformation
-                M, mask = cv2.findHomography(dst_pts, src_pts, cv2.RANSAC, 5.0)
-                w, h, _ = imageF.shape
-                imageF = cv2.warpPerspective(imageF, M, (h, w))
-                stacked_image += imageF
-                if tmpfolder != '':
-                    # newFile = os.path.join(tmpfolder, basename + '.png')
-                    newFile = os.path.join(tmpfolder, basename + '.ppm')  # Should be 3x faster than png
-                    aligned_images.append(newFile)
-                    print(strAfter, newFile)
-                    newImage = (imageF * 255).astype(np.uint8)
-                    cv2.imwrite(str(newFile), newImage)
-
-        if folder != '' and fileName != '':
-            stacked_image /= len(images)
-            stacked_image = (stacked_image * 255).astype(np.uint8)
-            file_functions.save_file(str(os.path.join(folder, fileName)), stacked_image)
-
-        return aligned_images
-
-
-'''
-    elif values['_radio_alignmtb_']:
-        work_images = []
-        new_image = None
-        alignMTB = cv2.createAlignMTB()
-        for image in images:
-            if new_image is None:
-                new_image = image
-            im = cv2.imread(image)
-            work_images.append(im)
-        alignMTB.process(work_images, work_images)
-        mergeExposures = cv2.MergeExposures()
-        mergeExposures.process(work_images)
-        new_image /= len(work_images)
-        new_image = (new_image * 255).astype(np.uint8)
-        file_functions.save_file(str(os.path.join(folder, fileName)), new_image)
-'''
+    except (AttributeError, KeyError, IndexError):
+        # cases: image don't have getexif
+        print('No exif data?')
+        pass
+    '''

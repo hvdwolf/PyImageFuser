@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of ALIGN_IMAGE_STACK</TITLE>
+</HEAD><BODY style="font-family: Arial">
+<H1>ALIGN_IMAGE_STACK</H1>
+Section: HUGIN (1)<BR>Updated: 2018-10-16<BR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+align_image_stack - Align overlapping images for HDR or focus stack creation
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+
+
+<B>align_image_stack</B> [options] <I>input files</I>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+align_image_stack is used for the alignment of slightly misaligned images or for the
+registration of a stereo images pair.  When several differently exposed images are
+taken in the process of creating a High Dynamic Range image, the images are not
+perfectly aligned, and the quality of the <FONT SIZE="-1">HDR</FONT> image created will suffer from this.
+align_image_stack uses the tools available to hugin to optimize the roll, pitch and
+yaw, as well as some parameters of the lens geometry, to align the images.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+Modes of operation:
+<DL COMPACT>
+<DT><B>-p</B> <I>file</I><DD>
+
+
+Output .pto file (useful for debugging, or further refinement)
+<DT><B>-a</B> <I>prefix</I><DD>
+
+
+Output aligned images as prefix_xxxx.tif
+<DT><B>-o</B> <I>output</I><DD>
+
+
+Align images and merge them to <FONT SIZE="-1">HDR,</FONT> generate output.hdr
+</DL>
+<P>
+
+Modifiers:
+<DL COMPACT>
+<DT><B>-v</B><DD>
+
+
+Verbose, print progress messages. Repeat for higher verbosity
+<DT><B>-e</B><DD>
+
+
+Assume input images are full frame fish eye (default: rectilinear)
+<DT><B>-t</B> <I>num</I><DD>
+
+
+Remove all control points with an error higher than num pixels
+(default: 3)
+<DT><B>--corr=num</B><DD>
+
+
+Correlation threshold for identifying control points (default: 0.9)
+<DT><B>-f</B> <I></I><FONT SIZE="-1"><I>HFOV</I></FONT><I></I><DD>
+
+
+Approximate horizontal field of view of input images, use if <FONT SIZE="-1">EXIF</FONT> info
+not complete
+<DT><B>-m</B><DD>
+
+
+Optimize field of view for all images, except for first. Useful for
+aligning focus stacks with slightly different magnification.
+<DT><B>-d</B><DD>
+
+
+Optimize radial distortion for all images, except for first.
+<DT><B>-i</B><DD>
+
+
+Optimize image center shift for all images, except for first.
+<DT><B>-x</B><DD>
+
+Optimize X coordinate of camera position
+<DT><B>-y</B><DD>
+
+
+Optimize Y coordinate of camera position
+<DT><B>-z</B><DD>
+
+
+Optimize Z coordinate of camera position
+<DT><B>-S</B><DD>
+
+
+Assume stereo images - allow horizontal shift of control points.
+<DT><B>-A</B><DD>
+
+
+Align stereo window - assumes -S
+<DT><B>-P</B><DD>
+
+
+Align stereo window with pop-out effect - assumes -S
+<DT><B>-C</B><DD>
+
+
+Auto crop the image to the area covered by all images
+<DT><B>-c</B> <I>num</I><DD>
+
+
+Number of control points (per grid) to create between adjacent images
+(default: 8)
+<DT><B>-l</B><DD>
+
+
+Assume linear input files
+<DT><B>-s</B> <I>scale</I><DD>
+
+
+Scale down image by 2^scale (default: 1 [2x down-sampling])
+<DT><B>-g</B> <I>gsize</I><DD>
+
+
+Break image into a rectangular grid (gsize x gsize) and attempt to
+find num control points in each section (default: 5 [5x5 grid])
+<DT><B>--distortion</B><DD>
+
+
+Try to load distortion information from lens database
+<DT><B>--use-given-order</B><DD>
+
+
+Use the image order as given on the command line.
+(By default images will be sorted by exposure values.)
+<DT><B>--gpu</B><DD>
+
+
+Use <FONT SIZE="-1">GPU</FONT> for remapping
+<DT><B>-h</B><DD>
+
+
+Display help summary.
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>AUTHORS</H2>
+
+
+
+Written by Pablo d'Angelo. Also contains contributions from Douglas Wilkins, Ippei Ukai, Ed Halley, Bruno Postle, Gerry Patterson and Brent Townshend.  Stereo functionality added by Vladimir Nadvornik.
+<P>
+
+This man page was written by Cyril Brulebois
+&lt;<A HREF="mailto:cyril.brulebois@enst-bretagne.fr">cyril.brulebois@enst-bretagne.fr</A>&gt;, updated by Terry Duell, and is licensed under the same
+terms as the hugin package itself.
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">AUTHORS</A><DD>
+</DL>
+
+</BODY>
+</HTML>

@@ -26,6 +26,7 @@ import ui_actions
 import Settings
 import image_functions
 import program_texts
+import run_commands
 import file_functions
 
 
@@ -38,6 +39,7 @@ images = [] # This one is used for our calculations
 resized_images = [] # This one contains the complete path names of our resized images
 full_images = [] # this one contains the complete path names of the original images
 image_exif_dictionaries = {}
+reference_image = ''
 image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),)
 #thread_done = 1
 
@@ -61,20 +63,18 @@ def disable_elements(window, disable_elements):
         window['_select_all_'].update(disabled=True)
         window['_create_preview_'].update(disabled=True)
         window['_CreateImage_'].update(disabled=True)
-        window['_noise_reduction_'].update(disabled=True)
         window['_Close_'].update(disabled=True)
         ##window['_sgOutput_'].update(visible=True, disabled=False, echo_stdout_stderr=True) # When buttons are disabled, output window becomes visible
-        window['_sgOutput_'].update(visible=True)  # When buttons are disabled, output window becomes visible
+        #window['_sgOutput_'].update(visible=True)  # When buttons are disabled, output window becomes visible
     else:
         window['_btnLoadImages_'].update(disabled=False)
         window['_btnPreferences_'].update(disabled=False)
         window['_select_all_'].update(disabled=False)
         window['_create_preview_'].update(disabled=False)
         window['_CreateImage_'].update(disabled=False)
-        window['_noise_reduction_'].update(disabled=False)
         window['_Close_'].update(disabled=False)
         ##window['_sgOutput_'].update(visible=False, disabled=True, echo_stdout_stderr=False) # When buttons are enabled, output window is hidden
-        window['_sgOutput_'].update(visible=False) # When buttons are enabled, output window is hidden
+        #window['_sgOutput_'].update(visible=False) # When buttons are enabled, output window is hidden
 
 def display_processing_time(window, starttime, stoptime):
     proc_time = stoptime - starttime
@@ -138,6 +138,8 @@ def main():
             window['-FILE LIST-'].update(filenames)
             if values["-FILES-"]: # or values["-FILES-"] == {}: #empty list returns False
                 file_list = values["-FILES-"].split(";")
+                null_image = file_list[0]
+                reference_image = ''
                 for file in file_list:
                     # print(f)
                     fname = os.path.basename(file)
@@ -148,9 +150,16 @@ def main():
                     filenames.append(fname)
                     pathnames.append(file)
                     # get all exif date if available
-                    image_exif_dictionaries[fname] = image_functions.get_all_exif_info(file)
+                    tmp_reference_image, image_exif_dictionaries[fname] = image_functions.get_all_exif_info(file)
+                    if tmp_reference_image != '':
+                        reference_image = tmp_reference_image
+                        print('reference_image', reference_image)
+                    #image_functions.get_basic_exif_info_from_file(file, '')
                 window['-FILE LIST-'].update(filenames)
                 window['-FOLDER-'].update(folder)
+                # Check if we now have a reference image, in case the images do not contain (enough) exif info
+                if reference_image == None or reference_image == "":
+                    reference_image = null_image
         elif event == 'About...':
             window.disappear()
             sg.popup(program_texts.about_message, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
@@ -163,10 +172,18 @@ def main():
             #window.disappear()
             program_texts.explain_parameters_popup()
             #window.reappear()
-        elif event == 'Exposure fusion' or event == '_expfuse_help_':
-            webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'exposurefusing.html')))
-        elif event == 'Alignment' or event == '_align_help_':
-            webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'alignment.html')))
+        elif event == 'Align_Image_stack parameters':
+            try:
+                webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'align_image_stack.html')) )
+                #webbrowser.open('https://manpages.debian.org/testing/hugin-tools/align_image_stack.1.en.html')
+            except:
+                sg.popup("Can't open the align_image_stack parameters html", icon=image_functions.get_icon())
+        elif event == 'Enfuse parameters':
+            try:
+                webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'enfuse.html')))
+                #webbrowser.open('https://manpages.debian.org/buster/enfuse/enfuse.1.en.html')
+            except:
+                sg.popup("Can't open the enfuse parameters html", icon=image_functions.get_icon())
         elif event == 'Preferences' or event =='_btnPreferences_':
             Settings.settings_window()
         elif event == '_select_all_':
@@ -208,19 +225,30 @@ def main():
                     disable_elements(window, True)
                     window.refresh()
                     starttime = timeit.default_timer()
-                    if values['_align_images_'] and not values['_radio_alignmtb_']: # align with ecc or orb
-                        aligned_images = image_functions.do_align_and_noise_reduction(resized_images, '', '', values, tmpfolder)
-                        image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
-                    elif values['_align_images_'] and values['_radio_alignmtb_']:
-                        image_functions.align_fuse(values, resized_images, tmpfolder, 'preview',True)
-                    else:  # Create preview without aligning
-                        #image_functions.align_fuse(values, resized_images, tmpfolder, 'preview', False) # False for "don't align"
-                        image_functions.exposure_fuse(values, aligned_images, tmpfolder, 'preview')
+                    if (values['_useAISPreview_']):
+                        cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, 'preview')
+                        print("\n\ncmdstring: ", cmdstring, "; cmd_list: ", cmd_list, "\n\n")
+                        result = run_commands.run_shell_command(cmdstring, cmd_list, "running align_image_stack", False)
+                        # print("\n\n" + result + "\n\n")
+                        if result == 'OK':
+                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
+                            print("\n\n", cmdstring, "\n\n")
+                            result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
+                            image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
+                    else:  # Create preview without using ais
+                        cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview', '')
+                        print("\n\n", cmdstring, "\n\n")
+                        result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
                     stoptime = timeit.default_timer()
                     display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
-                    image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
+                    print('create preview reference_image: ', reference_image)
+                    print('null_image', null_image)
+                    if reference_image == "":
+                        reference_image = null_image
+                    filepath = image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
+                    image_functions.display_preview(window, filepath)
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
         elif event == '_CreateImage_':
@@ -236,22 +264,34 @@ def main():
                     disable_elements(window, True)
                     window.refresh()
                     starttime = timeit.default_timer()
-                    if values['_align_images_'] and not values['_radio_alignmtb_']: # align with ecc or orb
-                        aligned_images = image_functions.do_align_and_noise_reduction(full_images, '', '', values, tmpfolder)
-                        image_functions.exposure_fuse(values, aligned_images, tmpfolder, os.path.join(folder, newFileName))
-                    elif values['_align_images_'] and values['_radio_alignmtb_']:
-                        image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName), True)
-                    else:  # Create full image without aligning
-                        #image_functions.align_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName),True)  # True for  "do align"
-                        image_functions.exposure_fuse(values, full_images, tmpfolder, os.path.join(folder, newFileName))
+                    newFileName = file_functions.check_filename(values, newFileName)
+                    if values['_useAIS_']:
+                        cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, '')
+                        print("\n\n", cmdstring, "\n\n")
+                        result = run_commands.run_shell_command(cmdstring, cmd_list, '  Now running align_image_stack  \n  Please be patient  ', False)
+                        print("\n\n" + result + "\n\n")
+                        if result == 'OK':
+                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'full_ais', os.path.join(folder, newFileName))
+                            print("\n\n", cmdstring, "\n\n")
+                            result = run_commands.run_shell_command(cmdstring, cmd_list, '  Now running enfuse  \n  Please be patient  ', False)
+                    else:  # Create full image without using ais
+                        cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, '', os.path.join(folder, newFileName))
+                        print("\n\n", cmdstring, "\n\n")
+                        result = run_commands.run_shell_command(cmdstring, cmd_list, '  Now running enfuse  \n  Please be patient  ', False)
                     stoptime = timeit.default_timer()
                     display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
+                    print('create reference_image: ', reference_image)
+                    print('null_image', null_image)
+                    if reference_image == "":
+                        reference_image = null_image
+                    image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
                     if values['_dispFinalIMG_']:
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
+        '''        
         elif event == '_noise_reduction_':
             # This code is copied from: https://github.com/maitek/image_stacking
             print('User pressed "Create noise reduced image"\n')
@@ -269,7 +309,7 @@ def main():
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
-
+        '''
     window.Close()
 
  

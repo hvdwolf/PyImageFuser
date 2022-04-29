@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of ENFUSE</TITLE>
+</HEAD><BODY style="font-family: Arial">
+<H1>ENFUSE</H1>
+Section: User Commands (1)<BR>Updated: April 2018<BR>
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+enfuse - poor man's HDR
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>enfuse</B>
+
+[<I>,options/</I>] [<I>,--output=IMAGE/</I>] <I>,INPUT/</I>...
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+Fuse INPUT images into a single IMAGE.
+<P>
+
+INPUT... are image filenames or response filenames.  Response
+filenames start with an &quot;@&quot; character.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<A NAME="lbAF">&nbsp;</A>
+<H3>Common options:</H3>
+
+<DL COMPACT>
+<DT><B>-l</B>, <B>--levels</B>=<I>,LEVELS/</I><DD>
+limit number of blending LEVELS to use (1 to 29);
+negative number of LEVELS decreases maximum;
+&quot;auto&quot; restores the default automatic maximization
+<DT><B>-o</B>, <B>--output</B>=<I>,FILE/</I><DD>
+write output to FILE; default: &quot;a.tif&quot;
+<DT><B>-v</B>, <B>--verbose</B>[=<I>,LEVEL/</I>]<DD>
+verbosely report progress; repeat to
+increase verbosity or directly set to LEVEL
+<DT><B>--compression</B>=<I>,COMPRESSION/</I><DD>
+set compression of output image to COMPRESSION,
+where COMPRESSION is:
+&quot;deflate&quot;, &quot;jpeg&quot;, &quot;lzw&quot;, &quot;none&quot;, &quot;packbits&quot;, for TIFF files and
+0 to 100, or &quot;jpeg&quot;, &quot;jpeg-arith&quot; for JPEG files,
+where &quot;jpeg&quot; and &quot;jpeg-arith&quot; accept a compression level
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H3>Advanced options:</H3>
+
+<DL COMPACT>
+<DT><B>--blend-colorspace</B>=<I>,COLORSPACE/</I><DD>
+force COLORSPACE for blending operations; Enfuse uses
+&quot;CIELUV&quot; for images with ICC-profile and &quot;IDENTITY&quot; for
+those without and also for all floating-point images;
+other available blend color spaces are &quot;CIELAB&quot; and
+&quot;CIECAM&quot;
+<DT><B>-c</B>, <B>--ciecam</B><DD>
+use CIECAM02 to blend colors; disable with &quot;--no-ciecam&quot;;
+note that this option will be withdrawn in favor of
+&quot;--blend-colorspace&quot;
+<DT><B>-d</B>, <B>--depth</B>=<I>,DEPTH/</I><DD>
+set the number of bits per channel of the output
+image, where DEPTH is &quot;8&quot;, &quot;16&quot;, &quot;32&quot;, &quot;r32&quot;, or &quot;r64&quot;
+<DT><B>-f</B> WIDTHxHEIGHT[+xXOFFSET+yYOFFSET]<DD>
+manually set the size and position of the output
+image; useful for cropped and shifted input
+TIFF images, such as those produced by Nona
+<DT><B>-g</B><DD>
+associated-alpha hack for Gimp (before version 2)
+and Cinepaint
+<DT><B>-w</B>, <B>--wrap</B>[=<I>,MODE/</I>]<DD>
+wrap around image boundary, where MODE is &quot;none&quot;,
+&quot;horizontal&quot;, &quot;vertical&quot;, or &quot;both&quot;; default: none;
+without argument the option selects horizontal wrapping
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H3>Fusion options:</H3>
+
+<DL COMPACT>
+<DT><B>--exposure-weight</B>=<I>,WEIGHT/</I><DD>
+weight given to well-exposed pixels
+(0 &lt;= WEIGHT &lt;= 1); default: 1
+<DT><B>--saturation-weight</B>=<I>,WEIGHT/</I><DD>
+weight given to highly-saturated pixels
+(0 &lt;= WEIGHT &lt;= 1); default: 0.2
+<DT><B>--contrast-weight</B>=<I>,WEIGHT/</I><DD>
+weight given to pixels in high-contrast neighborhoods
+(0 &lt;= WEIGHT &lt;= 1); default: 0
+<DT><B>--entropy-weight</B>=<I>,WEIGHT/</I><DD>
+weight given to pixels in high entropy neighborhoods
+(0 &lt;= WEIGHT &lt;= 1); default: 0
+<DT><B>--exposure-optimum</B>=<I>,OPTIMUM/</I><DD>
+optimum exposure value, usually the maximum of the weighting
+function (0 &lt;= OPTIMUM &lt;= 1); default: 0.5
+<DT><B>--exposure-width</B>=<I>,WIDTH/</I><DD>
+characteristic width of the weighting function
+(WIDTH &gt; 0); default: 0.2
+<DT><B>--soft-mask</B><DD>
+average over all masks; this is the default
+<DT><B>--hard-mask</B><DD>
+force hard blend masks and no averaging on finest
+scale; this is especially useful for focus
+stacks with thin and high contrast features,
+but leads to increased noise
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H3>Expert options:</H3>
+
+<DL COMPACT>
+<DT><B>--save-masks[</B>=<I>,SOFT-TEMPLATE[/</I>:HARD-TEMPLATE]]<DD>
+save weight masks in SOFT-TEMPLATE and HARD-TEMPLATE;
+conversion chars: &quot;%i&quot;: mask index, &quot;%n&quot;: mask number,
+&quot;%p&quot;: full path, &quot;%d&quot;: dirname, &quot;%b&quot;: basename,
+&quot;%f&quot;: filename, &quot;%e&quot;: extension; lowercase characters
+refer to input images uppercase to the output image
+default: &quot;softmask-%n.tif&quot;:&quot;hardmask-%n.tif&quot;
+<DT><B>--load-masks[</B>=<I>,SOFT-TEMPLATE[/</I>:HARD-TEMPLATE]]<DD>
+skip calculation of weight maps and use the ones
+in the files matching the templates instead.  These
+can be either hard or soft masks.  For template
+syntax see &quot;--save-masks&quot;;
+default: &quot;softmask-%n.tif&quot;:&quot;hardmask-%n.tif&quot;
+<DT><B>--fallback-profile</B>=<I>,PROFILE-FILE/</I><DD>
+use the ICC profile from PROFILE-FILE instead of sRGB
+<DT><B>--layer-selector</B>=<I>,ALGORITHM/</I><DD>
+set the layer selector ALGORITHM;
+default: &quot;all-layers&quot;; available algorithms are:
+&quot;all-layers&quot;: select all layers in any image;
+&quot;first-layer&quot;: select only first layer in each (multi-)layer image;
+&quot;last-layer&quot;: select only last layer in each (multi-)layer image;
+&quot;largest-layer&quot;: select largest layer in each (multi-)layer image;
+&quot;no-layer&quot;: do not select any layer from any image;
+<DT><B>--parameter</B>=<I>,KEY1[=VALUE1][/</I>:KEY2[=VALUE2][:...]]<DD>
+set one or more KEY-VALUE pairs
+</DL>
+<A NAME="lbAJ">&nbsp;</A>
+<H3>Expert fusion options:</H3>
+
+<DL COMPACT>
+<DT><B>--exposure-weight-function</B>=<I>,WEIGHT-FUNCTION/</I><DD>
+(1st form)
+select one of the built-in exposure WEIGHT-FUNCTIONs:
+&quot;gaussian&quot;, &quot;lorentzian&quot;, &quot;half-sine&quot;, &quot;full-sine&quot;,
+or &quot;bi-square&quot;; default: &quot;gaussian&quot;
+<DT><B>--exposure-weight-function</B>=<I>,SHARED-OBJECT/</I>:SYMBOL[:ARGUMENT[:...]]<DD>
+(2nd form)
+load user-defined exposure weight function SYMBOL
+from SHARED-OBJECT and optionally pass ARGUMENTs
+<DT><B>--exposure-cutoff</B>=<I>,LOWERCUTOFF[/</I>:UPPERCUTOFF[:LOWERPROJECTOR[:UPPERPROJECTOR]]]<DD>
+LOWERCUTOFF and UPPERCUTOFF are the values below
+or above of which pixels are weighted with zero
+weight in exposure weighting; append &quot;%&quot; signs
+for relative values; default: 0%:100%:anti-value:value
+<DT><B>--contrast-window-size</B>=<I>,SIZE/</I><DD>
+set window SIZE for local-contrast analysis
+(SIZE &gt;= 3); default: 5
+<DT><B>--contrast-edge-scale</B>=<I>,EDGESCALE[/</I>:LCESCALE[:LCEFACTOR]]<DD>
+set scale on which to look for edges; positive
+LCESCALE switches on local contrast enhancement
+by LCEFACTOR (EDGESCALE, LCESCALE, LCEFACTOR &gt;= 0);
+append &quot;%&quot; to LCESCALE for values relative to
+EDGESCALE; append &quot;%&quot; to LCEFACTOR for relative
+value; default: 0:0:0
+<DT><B>--contrast-min-curvature</B>=<I>,CURVATURE/</I><DD>
+minimum CURVATURE for an edge to qualify; append
+&quot;%&quot; for relative values; default: 0
+<DT><B>--gray-projector</B>=<I>,PROJECTOR/</I><DD>
+apply gray-scale PROJECTOR in exposure or contrast
+weighing, where PROJECTOR is one of &quot;anti-value&quot;,
+&quot;average&quot;, &quot;l-star&quot;, &quot;lightness&quot;, &quot;luminance&quot;,
+&quot;pl-star&quot;, &quot;value&quot;, or
+&quot;channel-mixer:RED-WEIGHT:GREEN-WEIGHT:BLUE-WEIGHT&quot;;
+default: &quot;average&quot;
+<DT><B>--entropy-window-size</B>=<I>,SIZE/</I><DD>
+set window SIZE for local entropy analysis
+(SIZE &gt;= 3); default: 3
+<DT><B>--entropy-cutoff</B>=<I>,LOWERCUTOFF[/</I>:UPPERCUTOFF]<DD>
+LOWERCUTOFF is the value below of which pixels are
+treated as black and UPPERCUTOFF is the value above
+of which pixels are treated as white in the entropy
+weighting; append &quot;%&quot; signs for relative values;
+default: 0%:100%
+</DL>
+<A NAME="lbAK">&nbsp;</A>
+<H3>Information options:</H3>
+
+<DL COMPACT>
+<DT><B>-h</B>, <B>--help</B><DD>
+print this help message and exit
+<DT><B>-V</B>, <B>--version</B><DD>
+output version information and exit
+<DT><B>--show-globbing-algorithms</B><DD>
+show all globbing algorithms
+<DT><B>--show-image-formats</B><DD>
+show all recognized image formats and their filename
+extensions
+<DT><B>--show-signature</B><DD>
+show who compiled the binary when and on which machine
+<DT><B>--show-software-components</B><DD>
+show the software components with which Enfuse was compiled
+</DL>
+<P>
+
+Enfuse accepts arguments to any option in uppercase as
+well as in lowercase letters.
+<A NAME="lbAL">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<DL COMPACT>
+<DT>OMP_NUM_THREADS<DD>
+The OMP_NUM_THREADS environment variable sets the number
+of threads to use in OpenMP parallel regions.  If unset
+Enfuse uses as many threads as there are CPUs.
+<DT>OMP_DYNAMIC<DD>
+The OMP_DYNAMIC environment variable controls dynamic
+adjustment of the number of threads to use in executing
+OpenMP parallel regions.
+</DL>
+<A NAME="lbAM">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Written by Andrew Mihal, Christoph Spiel and others.
+<A NAME="lbAN">&nbsp;</A>
+<H2>REPORTING BUGS</H2>
+
+Report bugs at &lt;<A HREF="https://bugs.launchpad.net/enblend">https://bugs.launchpad.net/enblend</A>&gt;.
+<A NAME="lbAO">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+Copyright &#169; 2004-2009 Andrew Mihal.
+<BR>
+
+Copyright &#169; 2009-2016 Christoph Spiel.
+<P>
+
+License GPLv2+: GNU GPL version 2 or later &lt;<A HREF="http://www.gnu.org/licenses/gpl.html">http://www.gnu.org/licenses/gpl.html</A>&gt;
+<BR>
+
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DL>
+<DT><A HREF="#lbAF">Common options:</A><DD>
+<DT><A HREF="#lbAG">Advanced options:</A><DD>
+<DT><A HREF="#lbAH">Fusion options:</A><DD>
+<DT><A HREF="#lbAI">Expert options:</A><DD>
+<DT><A HREF="#lbAJ">Expert fusion options:</A><DD>
+<DT><A HREF="#lbAK">Information options:</A><DD>
+</DL>
+<DT><A HREF="#lbAL">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAM">AUTHOR</A><DD>
+<DT><A HREF="#lbAN">REPORTING BUGS</A><DD>
+<DT><A HREF="#lbAO">COPYRIGHT</A><DD>
+</DL>
+
+</BODY>
+</HTML>

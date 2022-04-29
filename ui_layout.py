@@ -25,7 +25,7 @@ import program_texts
 #---------------------------------------- Menu ------------------------------------------------
 menu_def = [
                ['&File', ['!&Load files', '---', '&Preferences', 'E&xit']],
-               ['&Help', ['&About...', '&Credits', 'Program buttons', 'Exposure fusion', 'Alignment', ]],
+               ['&Help', ['&About...', '&Credits', 'Program buttons', 'Align_Image_stack parameters', 'Enfuse parameters']],
            ]
 
 #----------------------------------------------------------------------------------------------
@@ -34,93 +34,108 @@ menu_def = [
 def create_and_show_gui(tmpfolder, startFolder):
 # This creates the complete gui and then returns the gui
 # to pyimagefuser where the events are evaluated
-#----------------------------------------------------------------------------------------------
-#---------------- Main tab for the default settings to make a exposure fused image  -----------------
-
-    layoutAlignmtbbitshift = [
-        [sg.Text('Logarithm to the base of 2 of the maximal\nshift in each dimension.\n5 or 6 is usually good enough.', )],
-        [sg.Combo(values=sorted((3, 4, 5, 6, 7, 8)), default_value=5, size=(2, 1), key='_bitshiftCombo_')],
-    ]
-    layoutAlignModels = [
-        [sg.Radio('AlignMTB', "RadioAlign", default=True, key='_radio_alignmtb_', tooltip='General purpose good and fast alignment')],
-        [sg.Radio('ECC', "RadioAlign", default=False, key='_radio_ecc_', tooltip='The most accurate one, but also the slowest')],
-        [sg.Radio('ORB (stacks only)', "RadioAlign", default=False, key='_radio_orb_', tooltip='ORB is a fast keypoint dectector. Use ONLY with perfectly aligned stacks.')],
-    ]
-    layoutAlignmentMethods = [
-        [sg.Frame('Methods to align your images', layoutAlignModels, font=('Calibri', '10', 'bold'))],
-        [sg.VPush()],
-        [sg.Frame("Maximum bit shift (alignMTB only)", layoutAlignmtbbitshift, font=('Calibri', '10', 'bold'))],
-    ]
-
-    layoutAlignECCMotionModels = [
-        #[sg.Text('ECC motion model', font=('Calibri', '10', 'bold'))],
-        [sg.Text('Top to bottom in decreasing accuracy\n but increasing speed')],
-        [sg.Radio('HOMOGRAPHY', "RadioMM", default=True, key='_homography_',)],
-        [sg.Radio('AFFINE', "RadioMM", default=False, key='_affine_', )],
-        [sg.Radio('EUCLIDEAN', "RadioMM", default=False, key='_euclidean_', )],
-        [sg.Radio('TRANSLATION', "RadioMM", default=False, key='_translation_', )],
-    ]
-    layoutAlignmentTab = [
-        [sg.Column(layoutAlignmentMethods, vertical_alignment='top'), sg.VSeperator(), sg.Frame('Geometric image transformation models (ECC only)', layoutAlignECCMotionModels, font=('Calibri', '10', 'bold'), vertical_alignment='top')],
-        [sg.VPush()],
-        [sg.Push(), sg.Button('Help', font=('Calibri', '10', 'bold'), key='_align_help_')]
-    ]
+# ----------------------------------------------------------------------------------------------
+# ---------------- Main tab for the default settings to make an enfused image  -----------------
 
     layoutMainGeneralCheckBoxes = [
-        [sg.Checkbox('Always align images', key='_align_images_', default=True)],
-        #[sg.Checkbox('Use ECC method for aligning', key='_eccMethod_', default=True, tooltip='ECC is more accurate than ORB, but 3-5x as slow')],
-        [sg.Checkbox('Display image after exposure fusing', key='_dispFinalIMG_', default=True)],
-        [sg.Checkbox('Save final image to source folder', key='_saveToSource_', default=True)],
-        #[sg.Frame('Options to align your images', layoutAlignmentFrame, font=('Calibri', '10', 'bold'))]
+        [sg.Checkbox('Use Align_image_stack', key='_useAIS_', default=True)],
+        [sg.Checkbox('Display image after enfusing', key='_dispFinalIMG_', default=True)],
+        [sg.Checkbox('Save final image to source folder', key='_saveToSource_', default=True)]
     ]
     layoutMain_SaveAs = [
         [sg.Text('Save Images as:')],
-        [sg.Radio('.jpg (Default)', "RADIOSAVEAS", default=True, key='_jpg_'), ],
-        #[sg.Radio('.tiff', "RADIOSAVEAS", default=False, key='_tiff_'), sg.Combo(['deflate', 'packbits', 'lzw', 'none'], default_value='deflate', key='_tiffCompression')],
-        [sg.Radio('.tiff', "RADIOSAVEAS", default=False, key='_tiff_')],
-        [sg.Radio('.png', "RADIOSAVEAS", default=False, key='_png_')],
+        [sg.Radio('.jpg (Default)', "RADIOSAVEAS", default=True, key='_jpg_'), sg.Spin([x for x in range(1, 100)], initial_value="90", key='_jpgCompression_')],
+        [sg.Radio('.Tiff 8bits', "RADIOSAVEAS", default=False, key='_tiff8_')],
+        [sg.Radio('.Tiff 16 bits', "RADIOSAVEAS", default=False, key='_tiff16_'), sg.Combo(['deflate', 'packbits', 'lzw', 'none'], default_value='deflate', key='_tiffCompression')],
+        [sg.Radio('.Tiff 32 bits', "RADIOSAVEAS", default=False, key='_tiff32_')]
     ]
-
-
-
-#----------------------------------------------------------------------------------------------
-#--------------------------- Exposure Fusion settings -----------------
-
-    layoutExposureFusion_ExposureWeight = [
-        [sg.Text('Exposure\nweight')],
-        [sg.Slider(key = '_exposure_weight_', range=(0,1), resolution='0.1', default_value='0.0')] # enfuse 1.0
-    ]
-    layoutExposureFusion_SaturationWeight = [
-        [sg.Text('Saturation\nweight')],
-        [sg.Slider(key = '_saturation_weight_', range=(0,1), resolution='0.1', default_value='1.0')] # enfuse 0.2
-    ]
-    layoutExposureFusion_ContrastWeight = [
-        [sg.Text('Contrast\nweight')],
-        [sg.Slider(key = '_contrast_weight_', range=(0,1), resolution='0.1', default_value='1.0')] # enfuse 0
-    ]
-    layoutExposureFusion = [
-          [sg.Column(layoutExposureFusion_ExposureWeight),
-          sg.Column(layoutExposureFusion_SaturationWeight),
-          sg.Column(layoutExposureFusion_ContrastWeight)],
-    ]
-
-    layoutFusing_Presets = [
+    layoutMain_Presets = [
         [sg.Text('Presets')],
-        #[sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
-        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=True, key='_preset_opencv_', enable_events=True, tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
-        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=False, key='_preset_enfuse_', enable_events=True, tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
-    ]
-    layoutExposureFusionAll = [
-        [sg.Column(layoutExposureFusion), sg.VSeperator(), sg.Column(layoutFusing_Presets, vertical_alignment='top')],
-        [sg.VPush()],
-        [sg.Push(), sg.Button('Help', font=('Calibri', '10', 'bold'), key='_expfuse_help_')]
+        [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
+        [sg.Radio('Default (resets all settings to defaults)', "RADIOPRESET", default=False, key='_alltodefault_')],
+        [sg.Radio('Focus Stacking', "RADIOPRESET", default=False, key='_focusstacking_')]
     ]
 
     layoutMainTab = [
-        [sg.Column(layoutMainGeneralCheckBoxes),],
+    # [sg.Column(layoutMainGeneralCheckBoxes), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMain_Presets)]
+        [sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMain_SaveAs), ],
         [sg.VPush()],
         [sg.Text('Processing time: --', key='_proc_time_', )]
+    ]
 
+# ----------------------------------------------------------------------------------------------
+# --------------------------- Enfuse tab -----------------
+    layoutEnfuseTab_Levels = [
+        [sg.Text('Levels\n')],
+        [sg.Slider(key='_levels_', range=(1, 29), resolution='1', default_value='29', size=(6, None))]
+    ]
+    layoutEnfuseTab_ExposureWeight = [
+        [sg.Text('Exposure\nweight')],
+        [sg.Slider(key='_exposure_weight_', range=(0, 1), resolution='0.1', default_value='1.0', size=(6, None), )]
+    ]
+    layoutEnfuseTab_SaturationWeight = [
+        [sg.Text('Saturation\nweight')],
+        [sg.Slider(key='_saturation_weight_', range=(0, 1), resolution='0.1', default_value='0.2', size=(6, None))]
+    ]
+    layoutEnfuseTab_ContrastWeight = [
+        [sg.Text('Contrast\nweight')],
+        [sg.Slider(key='_contrast_weight_', range=(0, 1), resolution='0.1', default_value='0', size=(6, None))]
+    ]
+    layoutEnfuseTab_EntropyWeight = [
+        [sg.Text('Entropy\nweight')],
+        [sg.Slider(key='_entropy_weight_', range=(0, 1), resolution='0.1', default_value='0', size=(6, None))]
+    ]
+    layoutEnfuseTab_ExposureOptimum = [
+        [sg.Text('Exposure\noptimum')],
+        [sg.Slider(key='_exposure_optimum_', range=(0, 1), resolution='0.1', default_value='0.5', size=(6, None))]
+    ]
+
+    layoutEnfuseTab_ExposureWidth = [
+        [sg.Text('Exposure\nwidth')],
+        [sg.Slider(key='_exposure_width_', range=(0, 1), resolution='0.1', default_value='0.2', size=(6, None))]
+    ]
+    layoutEnfuseTab_Mask = [
+        [sg.Text('Mask')],
+        [sg.Radio('Soft Mask (Default)', "RADIOMASK", default=True, key='_softmask_')],
+        [sg.Radio('Hard Mask', "RADIOMASK", default=False, key='_hardmask_', tooltip='Blending with hard masks is ONLY useful with focus stacks.')]
+    ]
+    layoutEnfuseTab_Wrap = [
+        [sg.Text('Wrap')],
+        [sg.Radio('None (Default)', "RADIOWRAP", default=True, key='_none_')],
+        [sg.Radio('Horizontal', "RADIOWRAP", default=False, key='_horizontal_')],
+        [sg.Radio('Vertical', "RADIOWRAP", default=False, key='_vertical_')],
+        [sg.Radio('Both', "RADIOWRAP", default=False, key='_both_')]
+    ]
+    layoutEnfuseTab = [
+        [sg.Column(layoutEnfuseTab_Levels), sg.Column(layoutEnfuseTab_ExposureWeight),
+         sg.Column(layoutEnfuseTab_SaturationWeight), sg.Column(layoutEnfuseTab_ContrastWeight),
+         sg.Column(layoutEnfuseTab_EntropyWeight), sg.Column(layoutEnfuseTab_ExposureOptimum),
+         sg.Column(layoutEnfuseTab_ExposureWidth), sg.VSeperator(),
+         sg.Column(layoutEnfuseTab_Mask, vertical_alignment='top'), sg.Column(layoutEnfuseTab_Wrap, vertical_alignment='top')]
+    ]
+
+# ----------------------------------------------------------------------------------------------
+# -------------------------------- Align_image_stack tab --------------------------------
+    layoutAIScheckboxes = [
+        [sg.Checkbox('Autocrop images', key='_autoCrop_', default=True)],
+        [sg.Checkbox('Use GPU for remapping', key='_useGPU_', default=True)],
+        [sg.Checkbox('Full Frame Fisheye images', key='_fffImages_', default=False)],
+        [sg.Checkbox('Optimize Field of View of all images except first', key='_fovOptimize_', default=False)],
+        [sg.Checkbox('Optimize image center of all images except first', key='_optimizeImgCenter_', default=False)],
+        [sg.Checkbox('Optimize radial distortion of all images except first', key='_optimizeRadialDistortion_', default=False)],
+        #[sg.Checkbox('Assume linear input files', key='_linImages_', default=False,)],
+    ]
+
+    layoutAISInputs = [
+        [sg.InputText(key='_inHFOV_', size=(4, 1)), sg.Text("HFOV"), sg.Checkbox('Auto HFOV', key='_autoHfov', default=True)],
+        [sg.InputText('8', key='_inNoCP_', size=(4, 1)), sg.Text('No. of Control points', tooltip='Default is 8. Increase to 20, 30 or 50 in case of not so good results.')],
+        [sg.InputText('3', key='_removeCPerror_', size=(4, 1)), sg.Text('Remove Control points with error > than')],
+        [sg.InputText('1', key='_inScaleDown_', size=(4, 1)), sg.Text('Scale down images by 2^ scale')],
+        [sg.InputText('5', key='_inGridsize_', size=(4, 1)), sg.Text('Grid size (default: 5x5)')],
+    ]
+
+    layoutAISTab = [
+        [sg.Column(layoutAIScheckboxes), sg.VSeperator(), sg.Column(layoutAISInputs, vertical_alignment='top')]
     ]
 #----------------------------------------------------------------------------------------------
 #--------------------------- Left and right panel -----------------
@@ -131,29 +146,30 @@ def create_and_show_gui(tmpfolder, startFolder):
         [sg.Text('Images Folder:')],
         [sg.Text( key='-FOLDER-', font = ('Calibri', 10, 'italic'), )],
         #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Multiline(size=(40, 20), visible=False, disabled=True, echo_stdout_stderr=False, key = '_sgOutput_')],
-        [sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Output(size=(40, 20), visible=False, key = '_sgOutput_')],
-        #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), ],
+        #[sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Output(size=(40, 15), visible=False, key = '_sgOutput_')],
+        [sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), ],
         [sg.Button('Select all', font = ('Calibri', 10, 'bold'), key='_select_all_'),
          sg.Checkbox('Display selected image when clicked on', key='_display_selected_'),],
-        #[sg.Frame('Program Settings', layoutMainFrame, font = ('Calibri', 10, 'bold'),)],
-        [sg.TabGroup([[sg.Tab('Main', layoutMainTab)], [sg.Tab('Align Options', layoutAlignmentTab), sg.Tab('Exposure fuse options', layoutExposureFusionAll)]])]
     ]
 
     layoutRightPanel = [
         [sg.Image(ui_actions.display_org_preview(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images','preview.png')), key='-IMAGE-')],
-        [sg.Button('(Re)Create Preview', font = ('Calibri', 10, 'bold'), key='_create_preview_')],
+        [sg.Button('(Re)Create Preview', font = ('Calibri', 10, 'bold'), key='_create_preview_'), sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
     ]
 
 #----------------------------------------------------------------------------------------------
 #--------------------------- Final Window layout -----------------
     layout = [
         [sg.Menu(menu_def, tearoff=False)],
-        [sg.Column(layoutLeftPanel), sg.VSeperator(), sg.Column(layoutRightPanel)],
+        [sg.Column(layoutLeftPanel, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutRightPanel, vertical_alignment='top')],
+        [sg.TabGroup([[sg.Tab('Main', layoutMainTab, tooltip='For default enfuse you can simply stay on this tab'),
+            sg.Tab('Align_image_stack', layoutAISTab),
+            sg.Tab('Enfuse', layoutEnfuseTab, ),
+        ]])],
         [sg.Push(),
-         #sg.Button('AlignMTB fused image', font = ('Calibri', 10, 'bold'), key='_AlignMTB_', tooltip='Use this option for Exposure fusion'),
-         sg.Button('Create Exposure fused image', font = ('Calibri', 10, 'bold'), key='_CreateImage_', tooltip='Use this option for Exposure fusion'),
-         sg.Button('Create noise reduced image', font = ('Calibri', 10, 'bold'), key='_noise_reduction_', tooltip='Use this option for noise reduction'),
-         sg.Button('Close', font = ('Calibri', 10, 'bold'), key = '_Close_')]
+            sg.Button('Create Exposure fused image', font = ('Calibri', 10, 'bold'), key='_CreateImage_', tooltip='Use this option for Exposure fusion'),
+            #sg.Button('Create noise reduced image', font = ('Calibri', 10, 'bold'), key='_noise_reduction_', tooltip='Use this option for noise reduction'),
+            sg.Button('Close', font = ('Calibri', 10, 'bold'), key = '_Close_')]
     ]
 
     # Open the window and return it to pyimagefuser
