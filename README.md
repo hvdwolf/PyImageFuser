@@ -1,6 +1,8 @@
 # PyImageFuser
 PyImageFuser is a Python3 PySimpleGui program to exposure fuse bracketed images, reduce noise in stacks and do focus stacking. It uses align_image_stack and enfuse to accomplish this.
 
+![splash](https://github.com/hvdwolf/PyImageFuser/raw/main/artwork/splash.png)
+
 ## In development, no releases yet.
 
 ## Why doing Exposure Fusion?
@@ -19,7 +21,7 @@ These manual settings are preferred over the standard "auto" mode which is mostl
 More about this, what the parameters mean and tips & tricks to improve your results in the Help menu.
 
 ## Choise of "tools"
-Why use the external enfuse and align_image_stack and not the internal opencv/numpy modules to align (alignMTB/ECC/ORB) and exposure fuse (mergeMertens).  
-I started with [OpenCV](https://github.com/hvdwolf/PyImageFuser/tree/opencv), but in all my tests especially align_image_stack outperforms the opencv alignmnent methods. The opencv methods at best are equals, but in 50% of the cases is worse.  
-OpenCV mergeMertens is comparable with enfuse (which also uses Mertens), but enfuse is little more tweakable although you will not use that in 95% of the cases.
+Why use the external enfuse and align_image_stack and not the internal OpenCV/numpy modules to align (alignMTB/ECC/ORB) and exposure fuse (mergeMertens).  
+I started with [OpenCV](https://github.com/hvdwolf/PyImageFuser/tree/opencv), but in all my tests especially align_image_stack outperforms the OpenCV alignmnent methods. The OpenCV methods at best are equal, but in 50% of the cases they perform worse.  
+OpenCV mergeMertens is comparable with enfuse (which also uses Mertens), but enfuse is a little more tweakable although you will not use that in 95% of the cases.
 
