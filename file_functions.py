@@ -78,8 +78,6 @@ def writeFile(filename, Lines):
     newFile.close()
 
 def getFileName(folder):
-    fileName = ""
-    foldertxt = ""
     folderInputTxt = ""
     if folder == '':
         foldertxt = 'Select a folder for your output image'
@@ -88,8 +86,8 @@ def getFileName(folder):
         folderInputTxt = folder
 
     layout = [[sg.Text('Enter the image filename:', font = ('Calibri', 10, 'bold'))],
-              [sg.Text('The fileformat to save to is determined by the extension, which is either .jp(e)g, .tif(f) or .png')],
-              [sg.Text('Without extension it will be saved as jpg in the quality as specified in the "Preferences"')],
+              #[sg.Text('The fileformat to save to is determined by the extension, which is either .jp(e)g, .tif(f) or .png')],
+              #[sg.Text('Without extension it will be saved as jpg in the quality as specified in the "Preferences"')],
               [sg.Input(key='-FILENAME-')],
               [sg.Text(foldertxt)],
               [sg.Input(folderInputTxt, key='-FOLDER-'), sg.FolderBrowse()],
@@ -114,7 +112,6 @@ def check_filename(values, fileName):
 
     basename, extension = os.path.splitext(fileName)
     ext = extension.lower()
-    #if ext == '' or len(ext) == 0: # which means we will save to the default jpg format
     if ext == '' or len(ext) == 0: # which means the user did not give an extension
         if values['_jpg_']:
             fileName = fileName + '.jpg'

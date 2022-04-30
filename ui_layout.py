@@ -11,11 +11,10 @@
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
-import platform
 
 import PySimpleGUI as sg
 
-import os
+import os, platform
 
 import ui_actions
 import file_functions
@@ -27,7 +26,7 @@ import program_texts
 #---------------------------------------- Menu ------------------------------------------------
 menu_def = [
                ['&File', ['!&Load files', '---', '&Preferences', 'E&xit']],
-               ['&Help', ['&About...', '&Credits', 'Program buttons', 'Align_Image_stack parameters', 'Enfuse parameters']],
+               ['&Help', ['&About...', '&Credits', 'Program buttons', 'Align_Image_stack parameters' , 'Align_Image_stack tips', 'Enfuse parameters']],
            ]
 
 #----------------------------------------------------------------------------------------------
@@ -46,7 +45,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
     layoutMain_SaveAs = [
         [sg.Text('Save Images as:')],
-        [sg.Radio('.jpg (Default)', "RADIOSAVEAS", default=True, key='_jpg_'), sg.Spin([x for x in range(1, 100)], initial_value="90", key='_jpgCompression_')],
+        [sg.Radio('.jpg (Default)', "RADIOSAVEAS", default=True, key='_jpg_'), sg.Spin([x for x in range(1, 100)], initial_value="90", key='_jpgCompression_', readonly=True)],
         [sg.Radio('.Tiff 8bits', "RADIOSAVEAS", default=False, key='_tiff8_')],
         [sg.Radio('.Tiff 16 bits', "RADIOSAVEAS", default=False, key='_tiff16_'), sg.Combo(['deflate', 'packbits', 'lzw', 'none'], default_value='deflate', key='_tiffCompression')],
         [sg.Radio('.Tiff 32 bits', "RADIOSAVEAS", default=False, key='_tiff32_')]
@@ -121,7 +120,8 @@ def create_and_show_gui(tmpfolder, startFolder):
     layoutAIScheckboxes = [
         [sg.Checkbox('Autocrop images', key='_autoCrop_', default=True)],
         [sg.Checkbox('Use GPU for remapping', key='_useGPU_', default=True)],
-        [sg.Checkbox('Full Frame Fisheye images', key='_fffImages_', default=False)],
+        #[sg.Checkbox('Full Frame Fisheye images', key='_fffImages_', default=False)],
+        [sg.Checkbox('Use given order', key='_usegivenorder_', default=False, tooltip='Use for stacjs for noise reduction. Not for exposure bracketing')],
         [sg.Checkbox('Optimize Field of View of all images except first', key='_fovOptimize_', default=False)],
         [sg.Checkbox('Optimize image center of all images except first', key='_optimizeImgCenter_', default=False)],
         [sg.Checkbox('Optimize radial distortion of all images except first', key='_optimizeRadialDistortion_', default=False)],
@@ -129,11 +129,12 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
 
     layoutAISInputs = [
-        [sg.InputText(key='_inHFOV_', size=(4, 1)), sg.Text("HFOV"), sg.Checkbox('Auto HFOV', key='_autoHfov', default=True)],
-        [sg.InputText('8', key='_inNoCP_', size=(4, 1)), sg.Text('No. of Control points', tooltip='Default is 8. Increase to 20, 30 or 50 in case of not so good results.')],
-        [sg.InputText('3', key='_removeCPerror_', size=(4, 1)), sg.Text('Remove Control points with error > than')],
-        [sg.InputText('1', key='_inScaleDown_', size=(4, 1)), sg.Text('Scale down images by 2^ scale')],
-        [sg.InputText('5', key='_inGridsize_', size=(4, 1)), sg.Text('Grid size (default: 5x5)')],
+        [sg.InputText(key='_inHFOV_', size=(4, 1), enable_events=True), sg.Text("HFOV"), sg.Checkbox('Auto HFOV', key='_autoHfov', default=True)],
+        [sg.InputText('0.9', key='_correlation_', size=(4, 1), enable_events=True), sg.Text('Correlation threshold')],
+        [sg.InputText('8', key='_inNoCP_', size=(4, 1), enable_events=True), sg.Text('No. of Control points', tooltip='Default is 8. Increase to 20, 30 or 50 in case of not so good results.')],
+        [sg.InputText('3', key='_removeCPerror_', size=(4, 1), enable_events=True), sg.Text('Remove Control points with error > than')],
+        [sg.InputText('1', key='_inScaleDown_', size=(4, 1), enable_events=True), sg.Text('Scale down images by 2^ scale')],
+        [sg.InputText('5', key='_inGridsize_', size=(4, 1), enable_events=True), sg.Text('Grid size (default: 5x5)')],
     ]
 
     layoutAISTab = [

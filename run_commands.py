@@ -15,8 +15,6 @@
 import PySimpleGUI as sg
 import platform, subprocess
 
-import image_functions
-
 
 def run_command(cmdstring):
     retstring = ""

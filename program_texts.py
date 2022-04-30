@@ -114,9 +114,11 @@ resize_error_message = '''Something went really wrong with resizing.
 The program can\'t continue. Please check your images carefully.'''
 
 about_message = 'About PyImageFuser, Version ' + Version + '\n\n'
-about_message += 'PyImageFuser can be used for exposure bracketing and noise reduction.\n\n'
-about_message += 'PyImageFuser is built using Python3 and PySimpleGui.\n\n'
+about_message += 'PyImageFuser can be used for exposure bracketing, noise reduction and focus stacking.\n\n'
+about_message += 'PyImageFuser is built using Python3 and PySimpleGui.\n'
+about_message += 'PyImageFuser uses the external tools enfuse and align_image_stack.\n\n'
 about_message += 'PyImageFuser is released under GPL v3.\n'
+about_message += 'enfuse and align_image_stack are released under GPL v2.\n'
 about_message += 'You should find the license with this software.\n\n'
 about_message += 'Author: Harry van der Wolf.'
 
@@ -126,12 +128,13 @@ Used packages:
 - tkinter
 - PySimpleGUI
 - PIL (pillow)
-- Python OpenCV
-- NumPy
- 
+
 Used code (Thanks to the writers):
-- Maitek: https://github.com/maitek/image_stacking
-- Satya Mallick : https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
+- align_image_stack by Pablo d'Angelo. Also contains contributions from:
+  Douglas Wilkins, Ippei Ukai, Ed Halley, Bruno Postle, Gerry Patterson and Brent Townshend.  
+  Stereo functionality added by Vladimir Nadvornik. 
+  
+- enfuse by by Andrew Mihal, Christoph Spiel and others.
 '''
 
 # Add a \n every max. 78 characters
@@ -139,7 +142,67 @@ Explain_parameters = {
     "Always align images" : "Even on a tripod you might have minimal movement causing misalignment and therefore unsharp blended images.\nAligning them will improve sharpness, using either alignMTB or ECC.",
     "Display image after exposure fusing" : "After the image has been created and saved, it will be displayed in a python internal viewer window.",
     "Save final image to source folder" : "Save the image to the source folder, e.g. only ask filename",
-    "Create exposure fused image" : "Merge the different exposures of the same scene into a nice output image using the Mertens-Kautz-Van Reeth\nexposure fusion algorithm.",
-    "Create noise reduced image" : "Noise is random. Blending a stack of multiple images into one will remove the random pixels.\nBy default the ECC method is used but you can also use ORB.",
+    "Create exposure fused image" : "Merge the different exposures of the same scene into a better exposed image",
 }
+
+
+### And just for reference
+id_tag_dict = ([
+    (0x36864, 'ExifVersion'),
+    (0x37121, 'ComponentsConfiguration'),
+    (0x37122, 'CompressedBitsPerPixel'),
+    (0x36867, 'DateTimeOriginal'),
+    (0x36868, 'DateTimeDigitized'),
+    (0x37380, 'ExposureBiasValue'),
+    (0x37381, 'MaxApertureValue'),
+    (0x37383, 'MeteringMode'),
+    (0x37384, 'LightSource'),
+    (0x37385, 'Flash'),
+    (0x37386, 'FocalLength'),
+    (0x40961, 'ColorSpace'),
+    (0x40962, 'ExifImageWidth'),
+    (0x40965, 'ExifInteroperabilityOffset'),
+    (0x41989, 'FocalLengthIn35mmFilm'),
+    (0x41990, 'SceneCaptureType'),
+    (0x37520, 'SubsecTime'),
+    (0x37521, 'SubsecTimeOriginal'),
+    (0x37522, 'SubsecTimeDigitized'),
+    (0x40963, 'ExifImageHeight'),
+    (0x11, 'ProcessingSoftware'),
+    (0x270, 'ImageDescription'),
+    (0x271, 'Make'),
+    (0x41495, 'SensingMethod'),
+    (0x272, 'Model'),
+    (0x41728, 'FileSource'),
+    (0x33434, 'ExposureTime'),
+    (0x282, 'XResolution'),
+    (0x531, 'YCbCrPositioning'),
+    (0x33437, 'FNumber'),
+    (0x41729, 'SceneType'),
+    (0x33432, 'Copyright'),
+    (0x283, 'YResolution'),
+    (0x34850, 'ExposureProgram'),
+    (0x34853, 'GPSInfo'),
+    (0x41985, 'CustomRendered'),
+    (0x34855, 'ISOSpeedRatings'),
+    (0x296, 'ResolutionUnit'),
+    (0x50341, 'PrintImageMatching'),
+    (0x41986, 'ExposureMode'),
+    (0x40960, 'FlashPixVersion'),
+    (0x34864, 'None'),
+    (0x41987, 'WhiteBalance'),
+    (0x305, 'Software'),
+    (0x306, 'DateTime'),
+    (0x41988, 'DigitalZoomRatio'),
+    (0x315, 'Artist'),
+    (0x41991, 'GainControl'),
+    (0x41992, 'Contrast'),
+    (0x41993, 'Saturation'),
+    (0x50898, 'None'),
+    (0x41994, 'Sharpness'),
+    (0x50899, 'None'),
+    (0x274, 'Orientation'),
+    (0x34665, 'ExifOffset'),
+    (0x37500, 'MakerNote'),
+])
 

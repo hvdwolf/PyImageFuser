@@ -92,21 +92,6 @@ def replace_strings(Lines, orgstring, newstring):
             newLines.append(newstring + '\n')
     return newLines
 
-"""
-BaseException
- +-- SystemExit
- +-- KeyboardInterrupt
- +-- GeneratorExit
- +-- Exception
-     +-- Everything else
-"""
-def logger(e):
-    e = sys.exc_info()
-    print('Error Return Type: ', type(e))
-    print('Error Class: ', e[0])
-    print('Error Message: ', e[1])
-    return str(e[1])
-
 
 #----------------------------------------------------------------------------------------------
 #----------------------------- Main function --------------------------------------------------
@@ -128,10 +113,8 @@ def main():
 
     while True:
         event, values = window.Read(timeout=100)
-        #window['_proc_time_'].update('Processing time: --')
         if event == sg.WIN_CLOSED or event == '_Close_' or event == 'Exit':
             file_functions.remove_tmp_workfolder(tmpfolder)
-            #print('pressed Close')
             return('Cancel', values)
             break
         elif event == '-FILES-':
@@ -155,12 +138,25 @@ def main():
                     if tmp_reference_image != '':
                         reference_image = tmp_reference_image
                         print('reference_image', reference_image)
-                    #image_functions.get_basic_exif_info_from_file(file, '')
                 window['-FILE LIST-'].update(filenames)
                 window['-FOLDER-'].update(folder)
                 # Check if we now have a reference image, in case the images do not contain (enough) exif info
                 if reference_image == None or reference_image == "":
                     reference_image = null_image
+        # Now check the numerical "text" fields if only numerical
+        elif event == '_inHFOV_' and values['_inHFOV_'] and values['_inHFOV_'][-1] not in ('0123456789.'):
+            window['_inHFOV_'].update(values['_inHFOV_'][:-1])
+        elif event == '_correlation_' and values['_correlation_'] and values['_correlation_'][-1] not in ('0123456789.'):
+            window['_correlation_'].update(value='0.9')
+        elif event == '_inNoCP_' and values['_inNoCP_'] and values['_inNoCP_'][-1] not in ('0123456789'):
+            window['_inNoCP_'].update(value='8')
+        elif event == '_removeCPerror_' and values['_removeCPerror_'] and values['_removeCPerror_'][-1] not in ('0123456789'):
+            window['_removeCPerror_'].update(value='3')
+        elif event == '_inScaleDown_' and values['_inScaleDown_'] and values['_inScaleDown_'][-1] not in ('0123456789'):
+            window['_inScaleDown_'].update(value='1')
+        elif event == '_inGridsize_' and values['_inGridsize_'] and values['_inGridsize_'][-1] not in ('0123456789'):
+            window['_inGridsize_'].update(value='5')
+        # end of numerical checks
         elif event == 'About...':
             window.disappear()
             sg.popup(program_texts.about_message, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
@@ -176,13 +172,16 @@ def main():
         elif event == 'Align_Image_stack parameters':
             try:
                 webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'align_image_stack.html')) )
-                #webbrowser.open('https://manpages.debian.org/testing/hugin-tools/align_image_stack.1.en.html')
             except:
                 sg.popup("Can't open the align_image_stack parameters html", icon=image_functions.get_icon())
+        elif event == 'Align_Image_stack tips':
+            try:
+                webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'ais_tips.html')) )
+            except:
+                sg.popup("Can't open the align_image_stack tips html", icon=image_functions.get_icon())
         elif event == 'Enfuse parameters':
             try:
                 webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'enfuse.html')))
-                #webbrowser.open('https://manpages.debian.org/buster/enfuse/enfuse.1.en.html')
             except:
                 sg.popup("Can't open the enfuse parameters html", icon=image_functions.get_icon())
         elif event == 'Preferences' or event =='_btnPreferences_':
@@ -202,8 +201,6 @@ def main():
         elif event == '_preset_opencv_' or event == '_preset_enfuse_':
             ui_actions.set_fuse_presets(window, values)
         elif event == '_create_preview_':
-            # The exposure fusion and aligning has been copied from below page
-            # https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
             print('User pressed Create Preview\n')
             window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) >1: # We have at least 2 files
@@ -213,12 +210,10 @@ def main():
                 if failed != '':
                     is_zero = file_functions.getFileSizes(values, tmpfolder)
                     if is_zero > 0:
-                        #sg.popup_scrolled(program_texts.resize_error_message, failed, icon=image_functions.get_icon())
                         sg.popup(program_texts.resize_error_message, icon=image_functions.get_icon())
                         go_on = False # not necessary but do it anyway
                     else:
                         go_on = True
-                        #sg.popup_scrolled(program_texts.resize_warning_message, failed, icon=image_functions.get_icon())
                         program_texts.popup_text_scroll('Something went wrong',program_texts.resize_warning_message, failed)
                 else: # failed = ''
                     go_on = True
@@ -229,34 +224,29 @@ def main():
                     if (values['_useAISPreview_']):
                         cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, 'preview')
                         print("\n\ncmdstring: ", cmdstring, "; cmd_list: ", cmd_list, "\n\n")
-                        result = run_commands.run_shell_command(cmdstring, cmd_list, "running align_image_stack", False)
-                        # print("\n\n" + result + "\n\n")
+                        result = run_commands.run_shell_command(cmdstring, cmd_list, " running align_image_stack ", False)
                         if result == 'OK':
                             cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
                             print("\n\n", cmdstring, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
-                            #filepath = image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
-                            #image_functions.display_preview(window, filepath)
-                            image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
+                        else:
+                            print("return string from ais ", result)
                     else:  # Create preview without using ais
                         cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview', '')
                         print("\n\n", cmdstring, "\n\n")
-                        result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
+                        result = run_commands.run_shell_command(cmdstring, cmd_list, ' running enfuse ', False)
                     stoptime = timeit.default_timer()
                     display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
-                    print('create preview reference_image: ', reference_image)
-                    print('null_image', null_image)
                     if reference_image == "":
                         reference_image = null_image
-                    filepath = image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
-                    image_functions.display_preview(window, filepath)
+                    image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
+                    print('preview filepath', os.path.join(tmpfolder, 'preview.jpg'))
+                    image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
         elif event == '_CreateImage_':
-            # The exposure fusion and aligning has been copied from below page
-            # https://learnopencv.com/exposure-fusion-using-opencv-cpp-python/
             print('User pressed "Create Exposure fused image\n')
             window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
@@ -294,25 +284,6 @@ def main():
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
-        '''        
-        elif event == '_noise_reduction_':
-            # This code is copied from: https://github.com/maitek/image_stacking
-            print('User pressed "Create noise reduced image"\n')
-            window['_proc_time_'].update('Processing time: --')
-            if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
-                newFileName, full_images = image_functions.get_filename_images(values, folder)
-                if newFileName != '' and newFileName != 'Cancel':
-                    disable_elements(window, True)
-                    starttime = timeit.default_timer()
-                    image_functions.do_align_and_noise_reduction(full_images, folder, newFileName, values, '')
-                    stoptime = timeit.default_timer()
-                    display_processing_time(window, starttime, stoptime)
-                    disable_elements(window, False)
-                    if values['_dispFinalIMG_']:
-                        image_functions.displayImageWindow(os.path.join(folder, newFileName))
-            else: # 1 or 0 images selected
-                sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
-        '''
     window.Close()
 
  

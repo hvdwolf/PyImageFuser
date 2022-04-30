@@ -13,7 +13,7 @@
 # the GNU General Public Licence for more details.
 
 import PySimpleGUI as sg
-import io, os
+import io, os, sys
 from pathlib import Path
 from PIL import Image
 
@@ -73,3 +73,19 @@ def which_folder():
         init_folder = start_folder
 
     return init_folder
+
+
+"""
+BaseException
+ +-- SystemExit
+ +-- KeyboardInterrupt
+ +-- GeneratorExit
+ +-- Exception
+     +-- Everything else
+"""
+def logger(e):
+    e = sys.exc_info()
+    print('Error Return Type: ', type(e))
+    print('Error Class: ', e[0])
+    print('Error Message: ', e[1])
+    return str(e[1])

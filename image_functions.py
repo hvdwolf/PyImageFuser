@@ -21,17 +21,7 @@ from PIL import Image, ExifTags  # to manipulate images and read exif
 from PIL.ExifTags import TAGS
 
 import file_functions
-
-# Use 50 mm as stand for focal length
-# fl35mm = 50
-import PyImageFuser
-
-image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),)
-
-# Dictionary holding the translation between tag and tag id
-tag_translation = {
-    ""
-}
+import ui_actions
 
 
 def reworkTag(tagtuple, precision):
@@ -53,6 +43,14 @@ def reworkExposure(tagtuple):
     value = "1/" + str(tagtuple[1] // 10)
     return str(value)
 
+# This is just an example function which I might need
+def get_identifier_tag(filename):
+    im = Image.open(filename)
+    exifd = im.getexif()
+    keys = list(exifd.keys())
+    for k, v in im.getexif().items():
+        tag = TAGS.get(k)
+        print(k, '\t', tag)
 
 # Read all the exif info from the loaded images, if available
 def get_all_exif_info(filename):
@@ -76,19 +74,20 @@ def get_all_exif_info(filename):
             exif_dictionary[tag] = v
             if (tag == 'ExposureBiasValue'):
                 print(TAGS.get(k), ' : ', v)
-                #print(tag, ' : ', v)
                 if v == '0.0' or v == '0' or v == 0.0 or v == 0:
                    reference_image = filename
                    print('reference_image: ', reference_image)
     else:
         exif_dictionary['no exif'] = 'no exif'
+    img.close()
 
     return reference_image, exif_dictionary
 
-
+'''
 # Read some basic exif info from a file
 def get_basic_exif_info_from_file(filename, output):
     exif_dictionary = {}
+    exif_id_dictionary = {}
     reference_image =""   # This image contains the image with Exposure bias value/Exposure compensation 0
 
     img = Image.open(filename)
@@ -99,22 +98,27 @@ def get_basic_exif_info_from_file(filename, output):
     for k, v in img.getexif().items():
         if (TAGS.get(k) == 'ISOSpeedRatings'):  # ID=0x8827
             # print(TAGS.get(k), " : ", v)
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'DateTimeOriginal'):  # id=0x9003
             # print(TAGS.get(k), " : ", v)
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'MaxApertureValue'):  # ID=0x9205
             # print(TAGS.get(k), " : ", reworkTag(v, 1))
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'FocalLength'):  # id=0x920a
             # print(TAGS.get(k), " : ", reworkTag(v, 1))
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'FocalLengthIn35mmFilm'):  # id=0xa405
             # print(TAGS.get(k), " : ", v)
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
             # Field of View (FOV) http://www.bobatkins.com/photography/technical/field_of_view.html
@@ -123,9 +127,11 @@ def get_basic_exif_info_from_file(filename, output):
             exif_dictionary['FOV'] = FOV
         elif (TAGS.get(k) == 'ExposureTime'):  # id=0x829a
             # print(TAGS.get(k), " : ", reworkExposure(v))
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'ExposureBiasValue'):  # id=0x9204
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
             #print("ExposureCompensation\t: ", v)
@@ -134,9 +140,11 @@ def get_basic_exif_info_from_file(filename, output):
                 print('reference_image ', reference_image)
         elif (TAGS.get(k) == 'FNumber'):  # id=0x829d
             # print(TAGS.get(k), " : ", reworkTag(v, 1))
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
         elif (TAGS.get(k) == 'Orientation'):  # id=0x274d
+            exif_id_dictionary[k] = v
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
             #print(TAGS.get(k), " : ", v)
@@ -145,7 +153,37 @@ def get_basic_exif_info_from_file(filename, output):
         print('\n\n', exif_dictionary)
         # print("\n\n",exif_dictionary['ExposureBiasValue'])
 
-    return reference_image, exif_dictionary
+    return reference_image, exif_dictionary, exif_id_dictionary
+'''
+
+def get_basic_exif_info_from_file(filename):
+    exif_id_dictionary = {}
+    img = Image.open(filename)
+    exifd = img.getexif()
+    keys = list(exifd.keys())
+    for k, v in img.getexif().items():
+        if (TAGS.get(k) == 'ISOSpeedRatings'):  # ID=0x8827
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'DateTimeOriginal'):  # id=0x9003
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'MaxApertureValue'):  # ID=0x9205
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'FocalLength'):  # id=0x920a
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'FocalLengthIn35mmFilm'):  # id=0xa405
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'ExposureTime'):  # id=0x829a
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'ExposureBiasValue'):  # id=0x9204
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'FNumber'):  # id=0x829d
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+        elif (TAGS.get(k) == 'Orientation'):  # id=0x274d
+            exif_id_dictionary['"0x'+ k + '"'] = str(v)
+    img.close()
+
+    return exif_id_dictionary
+
 
 
 # This function resizes the original selected images when
@@ -169,7 +207,6 @@ def resizetopreview(all_values, folder, tmpfolder):
     files = all_values['-FILE LIST-']
     for file in files:
         nfile = os.path.join(folder, file)
-        # previewfile = os.path.join(tmpfolder, os.path.splitext(file)[0] + ".jpg")
         previewfile = os.path.join(tmpfolder, file)
 
         if not os.path.exists(previewfile):  # This means that the preview file does not exist yet
@@ -184,11 +221,9 @@ def resizetopreview(all_values, folder, tmpfolder):
                 sg.user_settings_filename(path=Path.home())
                 longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
                 preview_img.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
-                # Get necessary tags and write them to resized images
-                # for k, v in preview_img.getexif().items():
                 preview_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
             except Exception as e:
-                failed += PyImageFuser.logger(e) + '\n'  # get the error from the logger
+                failed += ui_actions.logger(e) + '\n'  # get the error from the logger
                 preview_img.save(previewfile, "JPEG")
                 # pass
             images.append(previewfile)
@@ -215,11 +250,9 @@ def resizesingletopreview(folder, tmpfolder, image):
             sg.user_settings_filename(path=Path.home())
             longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
             org_img.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
-            # Get necessary tags and write them to resized images
-            # for k, v in preview_img.getexif().items():
             org_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
         except Exception as e:
-            PyImageFuser.logger(e)
+            ui_actions.logger(e)
             # pass
 
 
@@ -239,10 +272,13 @@ def check_ais_params(all_values):
         cmd_list.append('-C')
     if all_values['_useGPU_']:
         cmd_string += '--gpu  '
-        # cmd_list.append('--gpu')
-    if all_values['_fffImages_']:
-        cmd_string += '-e '
-        cmd_list.append('-e')
+        cmd_list.append('--gpu')
+    #if all_values['_fffImages_']:
+    #    cmd_string += '-e '
+    #    cmd_list.append('-e')
+    if all_values['_usegivenorder_']:
+        cmd_string += '--use-given-order '
+        cmd_list.append('--use-given-order')
     if all_values['_fovOptimize_']:
         cmd_string += '-m '
         cmd_list.append('-m')
@@ -259,6 +295,9 @@ def check_ais_params(all_values):
         cmd_string += '-f ' + all_values['_inHFOV_'] + ' '
         cmd_list.append('-f')
         cmd_list.append(all_values['_inHFOV_'])
+    if not all_values['_correlation_'] == '0.9':
+        cmd_string += '--corr=' + all_values['_correlation_'] + ' '
+        cmd_list.append('--corr=' + all_values['_correlation_'])
     if not all_values['_inNoCP_'] == '8':
         cmd_string += '-c ' + all_values['_inNoCP_'] + ' '
         cmd_list.append('-c')
@@ -294,7 +333,6 @@ def create_ais_command(all_values, folder, tmpfolder, type):
 
     file_functions.remove_files(os.path.join(tmpfolder, '*ais*'))
     if platform.system() == 'Windows':
-        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'align_image_stack.exe'))
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'align_image_stack.exe')
         ais_string = cmd_string
     elif platform.system() == 'Darwin':
@@ -304,16 +342,13 @@ def create_ais_command(all_values, folder, tmpfolder, type):
         else:
             cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
     else:
-        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'align_image_stack'))
         check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
         if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
             cmd_string = 'align_image_stack'
         else:
             cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'align_image_stack')
 
-        #ais_string = cmd_string
     if (type == 'preview'):
-        # cmd_string = 'align_image_stack --gpu -a ' + os.path.join(tmpfolder,'preview_ais_001') + ' -v -t 2 -C -i '
         cmd_string += ' -a ' + os.path.join(tmpfolder, 'preview_ais_001') + ' '
         # cmd_list.append('--gpu')
         cmd_list.append('-a')
@@ -489,23 +524,6 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
 
 
 def get_curr_screen_geometry():
-    """
-    Get the size of the current screen in a multi-screen setup.
-
-    Returns:
-        geometry (str): The standard Tk geometry string.
-            [width]x[height]+[left]+[top]
-
-    root = tk.Tk()
-    root.update_idletasks()
-    root.attributes('-fullscreen', True)
-    root.state('iconic')
-    geometry = root.winfo_geometry()
-    root.destroy()
-    return geometry
-    """
-    # Do not use above. It might function better in a multi window environment
-    # but shows a gray full screen window for a moment
     root = tk.Tk()
     width = root.winfo_screenwidth()
     height = root.winfo_screenheight()
@@ -515,22 +533,17 @@ def get_curr_screen_geometry():
 
 def display_preview(mainwindow, imgfile):
     try:
-        # imgfile = os.path.join(folder, values['-FILE LIST-'][0])
-        # image_functions.get_basic_exif_info(imgfile, 'print')
-        # print("\n\nimgfile ", imgfile)
         image = Image.open(str(imgfile))
-        #image = reorient_img(tmpimage)
+        image = reorient_img(image)
         sg.user_settings_filename(path=Path.home())
         longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
         image.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
-        #image = reorient_img(image)
         bio = io.BytesIO()
         image.save(bio, format='PNG')
         mainwindow['-IMAGE-'].update(data=bio.getvalue())
-    except:
+    except Exception as e:
         # print("Something went wrong converting ", imgfile)
         pass
-    # exif_table = image_functions.get_basic_exif_info(imgfile, 'print')
 
 
 # This displays the final image in the default viewer
@@ -553,16 +566,6 @@ def reorient_img(pil_img):
     return pil_img
 
 def displayImageWindow(imgpath):
-    # If the user did not specify a file name extension, the program added ".jpg"
-    '''
-    basename, extension = os.path.splitext(imgpath)
-    ext = extension.lower()
-    if ext == '' or len(ext) == 0:
-        rawimgpath = str(imgpath + '.jpg')
-    else:
-        rawimgpath = str(imgpath)
-    print('displaying your image: ', rawimgpath, '\n')
-    '''
     tmpImg = Image.open(str(imgpath))
     newImg = reorient_img(tmpImg)
     # imgsize = newImg.size
@@ -634,49 +637,27 @@ def get_filename_images(values, folder):
 
 def copy_exif_info(reference_image, imagepath):
 
-    print('reference_image ', reference_image)
-    print('imagepath ', imagepath)
-    ref_img = Image.open(reference_image)
-    ref_exifd = ref_img.getexif()
-    ref_img.close()
-    pil_img = Image.open(imagepath)
-    pil_img.save(imagepath, "JPEG", exif=ref_exifd)
-    pil_img.close()
-    '''
-    rot_img = Image.open(imagepath)
-    img_exif = rot_img.getexif()
-
-    if len(img_exif):
-        print('img_exif[274] ', img_exif[274])
-        if img_exif[274] == 3:
-            pil_img = pil_img.transpose(Image.ROTATE_180)
-        elif img_exif[274] == 6:
-            pil_img = pil_img.transpose(Image.ROTATE_270)
-        elif img_exif[274] == 8:
-            pil_img = pil_img.transpose(Image.ROTATE_90)
-
-        pil_img.save(imagepath)
-        pil_img.close()
-    #return pil_img
-
     try:
-        image = Image.open(imagepath)
-        for orientation in ExifTags.TAGS.keys():
-            if ExifTags.TAGS[orientation] == 'Orientation':
-                break
-        exif = dict(image._getexif().items())
+        print('reference_image ', reference_image)
+        print('imagepath ', imagepath)
+        ref_img = Image.open(reference_image)
+        ref_exifd = ref_img.getexif()
+        #ref_exifd = ref_img.info['exif']
+        ref_img.close()
+    except Exception as e:
+        print("something went wrong copying the exif info from " + reference_image)
 
-        if exif[orientation] == 3:
-            image = image.transpose(Image.ROTATE_180)
-        elif exif[orientation] == 6:
-            image = image.transpose(Image.ROTATE_270)
-        elif exif[orientation] == 8:
-            image = image.transpose(Image.ROTATE_90)
-        image.save(imagepath)
-        image.close()
 
-    except (AttributeError, KeyError, IndexError):
-        # cases: image don't have getexif
-        print('No exif data?')
-        pass
-    '''
+    pil_img = Image.open(imagepath)
+    # first make a backup in case of error
+    backup = pil_img.copy()
+    try:
+        backuppath = imagepath.replace('preview', 'backup-preview')
+        backup.save(backuppath, "JPEG")
+        pil_img.save(imagepath, "JPEG", exif=ref_exifd)
+        pil_img.close()
+        os.remove(backuppath)
+    except Exception as e:
+        print("something went wrong saving the exif info to " + imagepath)
+        os.replace(backuppath, imagepath)
+        #pass
