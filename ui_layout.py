@@ -156,7 +156,7 @@ def create_and_show_gui(tmpfolder, startFolder):
 
     if platform.system() == 'Windows':
         layoutRightPanel = [
-            [sg.Image(ui_actions.display_org_preview(os.path.join(os.path.realpath('.')),'images', 'preview.png'), key='-IMAGE-')],
+            [sg.Image(ui_actions.display_org_preview(os.path.join(os.path.realpath('.'),'images', 'preview.png')), key='-IMAGE-')],
             [sg.Button('(Re)Create Preview', font=('Calibri', 10, 'bold'), key='_create_preview_'),
              sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
         ]

@@ -235,6 +235,8 @@ def main():
                             cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
                             print("\n\n", cmdstring, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
+                            #filepath = image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
+                            #image_functions.display_preview(window, filepath)
                             image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
                     else:  # Create preview without using ais
                         cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview', '')
@@ -244,8 +246,8 @@ def main():
                     display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
-                    #print('create preview reference_image: ', reference_image)
-                    #print('null_image', null_image)
+                    print('create preview reference_image: ', reference_image)
+                    print('null_image', null_image)
                     if reference_image == "":
                         reference_image = null_image
                     filepath = image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))

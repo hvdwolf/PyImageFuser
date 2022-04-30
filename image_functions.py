@@ -297,6 +297,12 @@ def create_ais_command(all_values, folder, tmpfolder, type):
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'align_image_stack.exe'))
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'align_image_stack.exe')
         ais_string = cmd_string
+    elif platform.system() == 'Darwin':
+        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
+            cmd_string = 'align_image_stack'
+        else:
+            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
     else:
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'align_image_stack'))
         check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
@@ -399,6 +405,12 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'enfuse.exe'))
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'enfuse.exe')
         enf_string = cmd_string
+    elif platform.system() == 'Darwin':
+        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
+            cmd_string = 'enfuse'
+        else:
+            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'enfuse')
     else:
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
         check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
@@ -506,11 +518,12 @@ def display_preview(mainwindow, imgfile):
         # imgfile = os.path.join(folder, values['-FILE LIST-'][0])
         # image_functions.get_basic_exif_info(imgfile, 'print')
         # print("\n\nimgfile ", imgfile)
-        image = Image.open(imgfile)
-        image = reorient_img(image)
+        image = Image.open(str(imgfile))
+        #image = reorient_img(tmpimage)
         sg.user_settings_filename(path=Path.home())
         longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
         image.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
+        #image = reorient_img(image)
         bio = io.BytesIO()
         image.save(bio, format='PNG')
         mainwindow['-IMAGE-'].update(data=bio.getvalue())
