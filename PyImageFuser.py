@@ -111,6 +111,9 @@ def main():
     # Display the GUI to the user
     window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)
 
+    # Now do the version cehck
+    file_functions.version_check()
+
     while True:
         event, values = window.Read(timeout=100)
         if event == sg.WIN_CLOSED or event == '_Close_' or event == 'Exit':

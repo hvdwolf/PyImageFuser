@@ -12,11 +12,13 @@
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
 
-import glob, os, shutil, sys
+import glob, os, shutil, sys, webbrowser
+from urllib.request import urlopen
 
 import PySimpleGUI as sg
 
 import image_functions
+import program_texts
 
 
 def resource_path(relative_path):
@@ -131,3 +133,40 @@ def getFileSizes(all_values, tmpfolder):
         if os.path.getsize(previewfile) == 0:
             is_zero += 1
     return is_zero
+
+
+def version_check():
+    '''
+    This functions check in program start for a new PyImageFuser version
+    '''
+
+    first = ""
+    second = ""
+    third = ""
+    new_version = False
+    version_txt = urlopen("https://raw.githubusercontent.com/hvdwolf/PyImageFuser/main/version.txt")
+
+    cur_version = (program_texts.Version).split(".")
+    print('this version: ', str(cur_version))
+    for line in version_txt:
+        rawline = line.decode('ascii').replace('\n','')
+        #print(rawline)
+        if 'first=' in rawline:
+            first = rawline[-1]
+        if 'second=' in rawline:
+            second = rawline[-1]
+        if 'third=' in rawline:
+            third = rawline[-1]
+
+    print('web version: ', first, '.', second, ".", third)
+    if int(first) > int(cur_version[0]):
+        new_version = True
+    elif int(second) > int(cur_version[1]):
+        new_version = True
+    elif int(third) > int(cur_version[2]):
+        new_version = True
+
+    if new_version:
+        answer = sg.popup_yes_no('There is a new version available.\nGo to the Releases page so you can download it?')
+        if answer == 'Yes':
+            webbrowser.open('https://github.com/hvdwolf/PyImageFuser/releases')
