@@ -67,7 +67,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
     layoutMainText = [
         [sg.Text('In most cases you can simply stay on this main tab. '
-                      'If cae your alignment or the final exposure is not correct, then check the other tabs'
+                      'In case your alignment or the final exposure is not correct, then check the other tabs'
                       ' or read some of the Help topics.', size=(30,6),)]
     ]
 
