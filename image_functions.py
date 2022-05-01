@@ -273,13 +273,13 @@ def check_ais_params(all_values):
     if all_values['_useGPU_']:
         cmd_string += '--gpu  '
         cmd_list.append('--gpu')
-    #if all_values['_fffImages_']:
-    #    cmd_string += '-e '
-    #    cmd_list.append('-e')
+    if all_values['_fffImages_']:
+        cmd_string += '-e '
+        cmd_list.append('-e')
     if all_values['_usegivenorder_']:
         cmd_string += '--use-given-order '
         cmd_list.append('--use-given-order')
-    if all_values['_fovOptimize_']:
+    if all_values['_OptimizeFOV_']:
         cmd_string += '-m '
         cmd_list.append('-m')
     if all_values['_optimizeImgCenter_']:
@@ -288,6 +288,15 @@ def check_ais_params(all_values):
     if all_values['_optimizeRadialDistortion_']:
         cmd_string += '-d '
         cmd_list.append('-d')
+    if all_values['_optimixeXposition_']:
+        cmd_string += '-x '
+        cmd_list.append('-x')
+    if all_values['_optimixeYposition_']:
+        cmd_string += '-y '
+        cmd_list.append('-y')
+    if all_values['_optimixeZposition_']:
+        cmd_string += '-z '
+        cmd_list.append('-z')
     #if all_values['_linImages_']:
     #    cmd_string += '-l '
     #    cmd_list.append('-l')
@@ -387,25 +396,25 @@ def create_ais_command(all_values, folder, tmpfolder, type):
 def check_enfuse_params(all_values):
     cmd_string = ""
     cmd_list = []
-    if not all_values['_levels_'] == '29':
+    if not all_values['_levels_'] == 29:
         cmd_string += '--levels=' + str(int(all_values['_levels_'])) + ' '
         cmd_list.append('--levels=' + str(int(all_values['_levels_'])))
-    if not all_values['_exposure_weight_'] == '1.0':
+    if not all_values['_exposure_weight_'] == 1.0:
         cmd_string += '--exposure-weight=' + str(all_values['_exposure_weight_']) + ' '
         cmd_list.append('--exposure-weight=' + str(all_values['_exposure_weight_']))
-    if not all_values['_saturation_weight_'] == '0.2':
+    if not all_values['_saturation_weight_'] == 0.2:
         cmd_string += '--saturation-weight=' + str(all_values['_saturation_weight_']) + ' '
         cmd_list.append('--saturation-weight=' + str(all_values['_saturation_weight_']))
-    if not all_values['_contrast_weight_'] == '0':
+    if not all_values['_contrast_weight_'] == 0:
         cmd_string += '--contrast-weight=' + str(all_values['_contrast_weight_']) + ' '
         cmd_list.append('--contrast-weight=' + str(all_values['_contrast_weight_']))
-    if not all_values['_entropy_weight_'] == '0':
+    if not all_values['_entropy_weight_'] == 0:
         cmd_string += '--entropy-weight=' + str(all_values['_entropy_weight_']) + ' '
         cmd_list.append('--entropy-weight=' + str(all_values['_entropy_weight_']))
-    if not all_values['_exposure_optimum_'] == '0.5':
+    if not all_values['_exposure_optimum_'] == 0.5:
         cmd_string += '--exposure-optimum=' + str(all_values['_exposure_optimum_']) + ' '
         cmd_list.append('--exposure-optimum=' + str(all_values['_exposure_optimum_']))
-    if not all_values['_exposure_width_'] == '0.2':
+    if not all_values['_exposure_width_'] == 0.2:
         cmd_string += '--exposure-width=' + str(all_values['_exposure_width_']) + ' '
         cmd_list.append('--exposure-width=' + str(all_values['_exposure_width_']))
     return cmd_string, cmd_list

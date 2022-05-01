@@ -160,6 +160,11 @@ def main():
         elif event == '_inGridsize_' and values['_inGridsize_'] and values['_inGridsize_'][-1] not in ('0123456789'):
             window['_inGridsize_'].update(value='5')
         # end of numerical checks
+        elif event == '_autoHfov':
+            if values['_autoHfov']:
+                window['_inHFOV_'].update(disabled=True)
+            else:
+                window['_inHFOV_'].update(disabled=False)
         elif event == 'About...':
             window.disappear()
             sg.popup(program_texts.about_message, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
@@ -196,6 +201,11 @@ def main():
             list_index.extend(range(0, max))
             window['-FILE LIST-'].update(set_to_index = list_index,)
             window.refresh()
+        elif event == '_display_selected_':
+            if values['_display_selected_']:
+                list_index = []
+                window['-FILE LIST-'].update(set_to_index=list_index, )
+                window.refresh()
         elif event == "-FILE LIST-":  # A file was chosen from the listbox
             #print('A file was chosen from the listbox')
             if values['_display_selected_'] and len(values['-FILE LIST-']) !=0:
@@ -226,11 +236,11 @@ def main():
                     starttime = timeit.default_timer()
                     if (values['_useAISPreview_']):
                         cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, 'preview')
-                        print("\n\ncmdstring: ", cmdstring, "; cmd_list: ", cmd_list, "\n\n")
+                        print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
                         result = run_commands.run_shell_command(cmdstring, cmd_list, " running align_image_stack ", False)
                         if result == 'OK':
                             cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
-                            print("\n\n", cmdstring, "\n\n")
+                            print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
                         else:
                             print("return string from ais ", result)

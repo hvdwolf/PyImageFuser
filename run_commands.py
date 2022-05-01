@@ -28,10 +28,10 @@ def run_command(cmdstring):
 def run_shell_command(cmdstring, arguments, waitmessage, output):
     retstring = ""
     if platform.system() == 'Windows':
-        result = sg.shell_with_animation(cmdstring, arguments, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.85)
+        result = sg.shell_with_animation(cmdstring, arguments, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.90)
     else:
         tlist = []
-        result = sg.shell_with_animation(cmdstring, tlist, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.85)
+        result = sg.shell_with_animation(cmdstring, tlist, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.90)
 
     if output:
         sg.popup_scrolled(result, font='Courier 10')
