@@ -4,6 +4,8 @@ PyImageFuser is a Python3 PySimpleGui program to exposure fuse bracketed images,
 <!--- ![splash](https://github.com/hvdwolf/PyImageFuser/raw/main/artwork/splash.png) --->
 ![main screen linux](https://github.com/hvdwolf/PyImageFuser/raw/main/screenshots/PIF-main-xfce4.jpg)
 
+[More screenshots also for Windows and MacOS](screenshots/README.md)
+
 ## In development, no releases yet.
 
 ## Why doing Exposure Fusion?
