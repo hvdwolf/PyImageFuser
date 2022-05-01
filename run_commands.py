@@ -14,6 +14,7 @@
 
 import PySimpleGUI as sg
 import platform, subprocess
+import image_functions
 
 
 def run_command(cmdstring):
@@ -28,13 +29,13 @@ def run_command(cmdstring):
 def run_shell_command(cmdstring, arguments, waitmessage, output):
     retstring = ""
     if platform.system() == 'Windows':
-        result = sg.shell_with_animation(cmdstring, arguments, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.90)
+        result = sg.shell_with_animation(cmdstring, arguments, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.90, keep_on_top=True)
     else:
         tlist = []
-        result = sg.shell_with_animation(cmdstring, tlist, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.90)
+        result = sg.shell_with_animation(cmdstring, tlist, message=waitmessage, font='Helvetica 15', no_titlebar=True, alpha_channel=0.90, keep_on_top=True)
 
     if output:
-        sg.popup_scrolled(result, font='Courier 10')
+        sg.popup_scrolled(result, font='Courier 10', keep_on_top=True, icon=image_functions.get_icon())
 
     if 'error' in result or 'Error' in result:
         retstring = "Something went wrong"

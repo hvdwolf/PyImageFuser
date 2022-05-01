@@ -26,7 +26,13 @@ import program_texts
 #---------------------------------------- Menu ------------------------------------------------
 menu_def = [
                ['&File', ['!&Load files', '---', '&Preferences', 'E&xit']],
-               ['&Help', ['&About...', '&Credits', 'Program buttons', 'Align_Image_stack parameters' , 'Align_Image_stack tips', 'Enfuse parameters']],
+               ['&Help', ['&About...',
+                          '&Credits',
+                          'Program buttons',
+                          'Align_Image_stack parameters (man page)' ,
+                          'Align_Image_stack tips',
+                          'Enfuse parameters (man page)',
+                          'Why exposure fuse?']],
            ]
 
 #----------------------------------------------------------------------------------------------
@@ -51,23 +57,58 @@ def create_and_show_gui(tmpfolder, startFolder):
         [sg.Radio('.Tiff 32 bits', "RADIOSAVEAS", default=False, key='_tiff32_')],
         #[sg.Radio('.png', "RADIOSAVEAS", default=False, key='_png_')]
     ]
-    layoutMain_Presets = [
+    layoutMainPresets = [
         [sg.Text('Presets')],
         [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
-        [sg.Radio('Default (resets all settings to defaults)', "RADIOPRESET", default=False, key='_alltodefault_')],
-        [sg.Radio('Focus Stacking', "RADIOPRESET", default=False, key='_focusstacking_')]
+        [sg.Radio('Default (resets all settings to defaults)', "RADIOPRESET", default=False, key='_alltodefault_', enable_events=True)],
+        [sg.Radio('Reduce noise in a stack of photos', "RADIOPRESET", default=False, key='_noisereduction_', enable_events=True)],
+        [sg.Radio('Focus Stacking', "RADIOPRESET", default=False, key='_focusstacking_', enable_events=True)],
+        [sg.Text('Simplest is: set to default, set to option', font = ('Any', 10, 'italic'))]
     ]
     layoutMainText = [
         [sg.Text('In most cases you can simply stay on this main tab. '
-                      'If your alignment or the final exposure is not correct, you can check the other tabs'
+                      'If cae your alignment or the final exposure is not correct, then check the other tabs'
                       ' or read some of the Help topics.', size=(30,6),)]
     ]
 
     layoutMainTab = [
-    # [sg.Column(layoutMainGeneralCheckBoxes), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMain_Presets)]
+        # [sg.Column(layoutMainGeneralCheckBoxes), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMain_Presets)]
         [sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMainText, vertical_alignment='top'),],
+        #[sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMainPresets, vertical_alignment='top'),],
         [sg.VPush()],
         [sg.Text('Processing time: --', key='_proc_time_', )]
+    ]
+
+# ----------------------------------------------------------------------------------------------
+# -------------------------------- Align_image_stack tab --------------------------------
+    layoutAISInputs = [
+        [ sg.InputText('50', key='_inHFOV_', size=(4, 1), disabled=True, enable_events=True, tooltip='Approximate horizontal field of view of input images, use if EXIF info not complete'), sg.Text("HFOV", tooltip='Approximate horizontal field of view of input images, use if EXIF info not complete'),sg.Checkbox('Auto HFOV', key='_autoHfov', default=True, enable_events=True, tooltip='Use exif info to determine HFOV. If not available, you can override the standard fallback value of 50'), ],
+        [sg.InputText('0.9', key='_correlation_', size=(4, 1), enable_events=True), sg.Text('Correlation threshold')],
+        [sg.InputText('8', key='_inNoCP_', size=(4, 1), enable_events=True), sg.Text('No. of Control points', tooltip='Default is 8. Increase to 20, 30 or 50 in case of not so good results.')],
+        [sg.InputText('3', key='_removeCPerror_', size=(4, 1), enable_events=True), sg.Text('Remove Control points with error > than')],
+        [sg.InputText('1', key='_inScaleDown_', size=(4, 1), enable_events=True), sg.Text('Scale down images by 2^ scale')],
+        [sg.InputText('5', key='_inGridsize_', size=(4, 1), enable_events=True), sg.Text('Grid size (default: 5x5)')],
+    ]
+
+    layoutAIScheckboxes = [
+        [sg.Checkbox('Autocrop images', key='_autoCrop_', default=True, tooltip='Important for hand held images. Autocrop to the area covered by all images.')],
+        [sg.Checkbox('Use GPU for remapping', key='_useGPU_', default=True, tooltip='Be careful. Align_image_stack can crash without GPU support, even without warning')],
+        [sg.Checkbox('Full Frame Fisheye images', key='_fffImages_', default=False)],
+        [sg.Checkbox('Use given order', key='_usegivenorder_', default=False, tooltip='Use in stacks for noise reduction. NOT (!) for exposure bracketing')],
+        #[sg.Checkbox('Assume linear input files', key='_linImages_', default=False,)],
+    ]
+
+    layoutAISadvanced = [
+        [sg.Checkbox('Optimize Field of View for all images except first', key='_OptimizeFOV_', default=False, tooltip='Useful for aligning focus stacks with slightly different magnification. ')],
+        [sg.Checkbox('Optimize image center for all images except first', key='_optimizeImgCenter_', default=False)],
+        [sg.Checkbox('Optimize radial distortion for all images except first', key='_optimizeRadialDistortion_', default=False)],
+        [sg.Checkbox('Optimize X coordinate of camera position', key='_optimixeXposition_', default=False)],
+        [sg.Checkbox('Optimize Y coordinate of camera position', key='_optimixeYposition_', default=False)],
+        [sg.Checkbox('Optimize Z coordinate of camera position', key='_optimixeZposition_', default=False)]
+    ]
+
+    layoutAISTab = [
+        [sg.Column(layoutAIScheckboxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutAISInputs, vertical_alignment='top')]
     ]
 
 # ----------------------------------------------------------------------------------------------
@@ -133,38 +174,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
 
 # ----------------------------------------------------------------------------------------------
-# -------------------------------- Align_image_stack tab --------------------------------
-
-    layoutAISInputs = [
-        [ sg.InputText('50', key='_inHFOV_', size=(4, 1), disabled=True, enable_events=True, tooltip='Approximate horizontal field of view of input images, use if EXIF info not complete'), sg.Text("HFOV", tooltip='Approximate horizontal field of view of input images, use if EXIF info not complete'),sg.Checkbox('Auto HFOV', key='_autoHfov', default=True, enable_events=True, tooltip='Use exif info to determine HFOV. If not available, you can override the standard fallback value of 50'), ],
-        [sg.InputText('0.9', key='_correlation_', size=(4, 1), enable_events=True), sg.Text('Correlation threshold')],
-        [sg.InputText('8', key='_inNoCP_', size=(4, 1), enable_events=True), sg.Text('No. of Control points', tooltip='Default is 8. Increase to 20, 30 or 50 in case of not so good results.')],
-        [sg.InputText('3', key='_removeCPerror_', size=(4, 1), enable_events=True), sg.Text('Remove Control points with error > than')],
-        [sg.InputText('1', key='_inScaleDown_', size=(4, 1), enable_events=True), sg.Text('Scale down images by 2^ scale')],
-        [sg.InputText('5', key='_inGridsize_', size=(4, 1), enable_events=True), sg.Text('Grid size (default: 5x5)')],
-    ]
-
-    layoutAIScheckboxes = [
-        [sg.Checkbox('Autocrop images', key='_autoCrop_', default=True, tooltip='Especially important for hand held images, to cover info available in all images.')],
-        [sg.Checkbox('Use GPU for remapping', key='_useGPU_', default=True, tooltip='Be careful. Align_image_stack can crash without GPU support, even without warning')],
-        [sg.Checkbox('Full Frame Fisheye images', key='_fffImages_', default=False)],
-        [sg.Checkbox('Use given order', key='_usegivenorder_', default=False, tooltip='Use in stacks for noise reduction. Not for exposure bracketing')],
-        #[sg.Checkbox('Assume linear input files', key='_linImages_', default=False,)],
-    ]
-
-    layoutAISadvanced = [
-        [sg.Checkbox('Optimize Field of View for all images except first', key='_OptimizeFOV_', default=False, tooltip='Useful for aligning focus stacks with slightly different magnification. ')],
-        [sg.Checkbox('Optimize image center for all images except first', key='_optimizeImgCenter_', default=False)],
-        [sg.Checkbox('Optimize radial distortion for all images except first', key='_optimizeRadialDistortion_', default=False)],
-        [sg.Checkbox('Optimize X coordinate of camera position', key='_optimixeXposition_', default=False)],
-        [sg.Checkbox('Optimize Y coordinate of camera position', key='_optimixeYposition_', default=False)],
-        [sg.Checkbox('Optimize Z coordinate of camera position', key='_optimixeZposition_', default=False)]
-    ]
-
-    layoutAISTab = [
-        [sg.Column(layoutAIScheckboxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutAISInputs, vertical_alignment='top')]
-    ]
-
+# --------------------------- Advanced tab -----------------
     layoutAdvanced = [
         [sg.Frame('Align_image_stack',layoutAISadvanced, vertical_alignment='top'), sg.Frame('Enfuse',layoutEnfuseAdvanced)],
     ]

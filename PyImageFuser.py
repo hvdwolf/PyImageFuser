@@ -120,32 +120,15 @@ def main():
             file_functions.remove_tmp_workfolder(tmpfolder)
             return('Cancel', values)
             break
-        elif event == '-FILES-':
-            filenames = []
-            window['-FILE LIST-'].update(filenames)
-            if values["-FILES-"]: # or values["-FILES-"] == {}: #empty list returns False
-                file_list = values["-FILES-"].split(";")
-                null_image = file_list[0]
-                reference_image = ''
-                for file in file_list:
-                    # print(f)
-                    fname = os.path.basename(file)
-                    folder = os.path.dirname(os.path.abspath(file))
-                    # Now save this folder as "last opened folder" to our settings
-                    sg.user_settings_filename(path=Path.home())
-                    sg.user_settings_set_entry('last_opened_folder', folder)
-                    filenames.append(fname)
-                    pathnames.append(file)
-                    # get all exif date if available
-                    tmp_reference_image, image_exif_dictionaries[fname] = image_functions.get_all_exif_info(file)
-                    if tmp_reference_image != '':
-                        reference_image = tmp_reference_image
-                        print('reference_image', reference_image)
-                window['-FILE LIST-'].update(filenames)
-                window['-FOLDER-'].update(folder)
-                # Check if we now have a reference image, in case the images do not contain (enough) exif info
-                if reference_image == None or reference_image == "":
-                    reference_image = null_image
+        elif event == '-FILES-': # user just loaded a bunch of images
+            reference_image, folder = ui_actions.fill_images_listbox(window, values)
+        # Check on presets
+        elif event == '_alltodefault_':
+            ui_actions.set_presets(window, 'defaults')
+        elif event == '_noisereduction_':
+            ui_actions.set_presets(window, 'noisereduction')
+        elif event == '_focusstacking_':
+            ui_actions.set_presets(window, 'focusstacking')
         # Now check the numerical "text" fields if only numerical
         elif event == '_inHFOV_' and values['_inHFOV_'] and values['_inHFOV_'][-1] not in ('0123456789.'):
             window['_inHFOV_'].update(values['_inHFOV_'][:-1])
@@ -177,21 +160,8 @@ def main():
             #window.disappear()
             program_texts.explain_parameters_popup()
             #window.reappear()
-        elif event == 'Align_Image_stack parameters':
-            try:
-                webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'align_image_stack.html')) )
-            except:
-                sg.popup("Can't open the align_image_stack parameters html", icon=image_functions.get_icon())
-        elif event == 'Align_Image_stack tips':
-            try:
-                webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'ais_tips.html')) )
-            except:
-                sg.popup("Can't open the align_image_stack tips html", icon=image_functions.get_icon())
-        elif event == 'Enfuse parameters':
-            try:
-                webbrowser.open('file://' + file_functions.resource_path(os.path.join('docs', 'enfuse.html')))
-            except:
-                sg.popup("Can't open the enfuse parameters html", icon=image_functions.get_icon())
+        elif event.startswith('Align_Image_stack parameters') or event.startswith('Align_Image_stack tips') or event.startswith('Enfuse parameters') or event.startswith('Why exposure'):
+            file_functions.show_html_in_browser(event)
         elif event == 'Preferences' or event =='_btnPreferences_':
             Settings.settings_window()
         elif event == '_select_all_':
@@ -264,9 +234,7 @@ def main():
             window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                 newFileName, full_images = image_functions.get_filename_images(values, folder)
-                if newFileName == '':
-                    sg.popup("You did not provide a filename!", icon=image_functions.get_icon())
-                elif newFileName != 'Cancel':
+                if newFileName != '' and newFileName != 'Cancel':
                     disable_elements(window, True)
                     window.refresh()
                     starttime = timeit.default_timer()
@@ -288,8 +256,8 @@ def main():
                     display_processing_time(window, starttime, stoptime)
                     disable_elements(window, False)
                     window.refresh()
-                    print('create reference_image: ', reference_image)
-                    print('null_image', null_image)
+                    #print('create reference_image: ', reference_image)
+                    #print('null_image', null_image)
                     if reference_image == "":
                         reference_image = null_image
                     image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
@@ -302,7 +270,6 @@ def main():
  
 #------------------- Main "boilerplate" function ----------------------------------------------
 #----------------------------------------------------------------------------------------------
-
 
 ## Main program, main module
 if __name__ == '__main__':

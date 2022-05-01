@@ -95,7 +95,7 @@ def getFileName(folder):
               [sg.Input(folderInputTxt, key='-FOLDER-'), sg.FolderBrowse()],
               [sg.B('OK',  bind_return_key=True), sg.B('Cancel'), ]]
 
-    window = sg.Window('Provide a filename', layout, icon=image_functions.get_icon())
+    window = sg.Window('Provide a filename', layout, icon=image_functions.get_icon(), keep_on_top=True)
     while True:
         event, values = window.read()
         if event in(sg.WINDOW_CLOSED, 'Cancel'):
@@ -167,6 +167,23 @@ def version_check():
         new_version = True
 
     if new_version:
-        answer = sg.popup_yes_no('There is a new version available.\nGo to the Releases page so you can download it?')
+        answer = sg.popup_yes_no('There is a new version available.\nGo to the Releases page so you can download it?', keep_on_top=True , icon=image_functions.get_icon())
         if answer == 'Yes':
             webbrowser.open('https://github.com/hvdwolf/PyImageFuser/releases')
+
+def show_html_in_browser(main_event):
+    if main_event.startswith('Align_Image_stack parameters'):
+        html_file = 'align_image_stack.html'
+    elif main_event.startswith('Align_Image_stack tips'):
+        html_file = 'ais_tips.html'
+    elif main_event.startswith('Enfuse parameters'):
+        html_file = 'enfuse.html'
+    elif main_event.startswith('Why exposure'):
+        html_file = 'exposurefusing.html'
+    else:
+        html_file = 'index.html'
+
+    try:
+        webbrowser.open('file://' + resource_path(os.path.join('docs', html_file)))
+    except:
+        sg.popup("Can't open " + html_file, icon=image_functions.get_icon())

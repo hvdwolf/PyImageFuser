@@ -16,6 +16,7 @@ import PySimpleGUI as sg
 import io, os, sys
 from pathlib import Path
 from PIL import Image
+import image_functions
 
 
 def display_org_preview(imgfile):
@@ -74,6 +75,54 @@ def which_folder():
 
     return init_folder
 
+def fill_images_listbox(window, values):
+    filenames = []
+    pathnames = []
+    image_exif_dictionaries = {}
+    window['-FILE LIST-'].update(filenames)
+    if values["-FILES-"]:  # or values["-FILES-"] == {}: #empty list returns False
+        file_list = values["-FILES-"].split(";")
+        null_image = file_list[0]
+        reference_image = ''
+        for file in file_list:
+            # print(f)
+            fname = os.path.basename(file)
+            folder = os.path.dirname(os.path.abspath(file))
+            # Now save this folder as "last opened folder" to our settings
+            sg.user_settings_filename(path=Path.home())
+            sg.user_settings_set_entry('last_opened_folder', folder)
+            filenames.append(fname)
+            pathnames.append(file)
+            # get all exif date if available
+            tmp_reference_image, image_exif_dictionaries[fname] = image_functions.get_all_exif_info(file)
+            if tmp_reference_image != '':
+                reference_image = tmp_reference_image
+                print('reference_image', reference_image)
+        window['-FILE LIST-'].update(filenames)
+        window['-FOLDER-'].update(folder)
+        # Check if we now have a reference image, in case the images do not contain (enough) exif info
+        if reference_image == None or reference_image == "":
+            reference_image = null_image
+
+    return reference_image, folder
+
+
+# Maybe later
+def set_presets(window, action):
+    if action == 'defaults':
+        print('set patameters to defaults')
+        window['_useAIS_'].update(value=True)
+        window['_dispFinalIMG_'].update(value=True)
+        window['_saveToSource_'].update(value=True)
+        window['_jpg_'].update(value=True)
+
+        window['_autoHfov'].update(value=True)
+        window['_inHFOV_'].update(value='50', disabled=True)
+        window['_correlation_'].update(value='0.9')
+    elif action == 'focusstacking':
+        print('focusstacking')
+    elif action == 'noisereduction':
+        print('noisereduction')
 
 """
 BaseException

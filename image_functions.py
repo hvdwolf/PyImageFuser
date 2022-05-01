@@ -417,6 +417,9 @@ def check_enfuse_params(all_values):
     if not all_values['_exposure_width_'] == 0.2:
         cmd_string += '--exposure-width=' + str(all_values['_exposure_width_']) + ' '
         cmd_list.append('--exposure-width=' + str(all_values['_exposure_width_']))
+    if all_values['_hardmask_']:
+        cmd_string += '--hard-mask '
+        cmd_list.append('--hard-mask')
     return cmd_string, cmd_list
 
 
@@ -574,7 +577,15 @@ def reorient_img(pil_img):
 
     return pil_img
 
+
 def displayImageWindow(imgpath):
+    '''
+    This function displays the created final image in a python window.
+    On a screen size >= 2K and < 4k, it will use a slightly smaller window
+
+    :param imgpath:     the complete path that leads to the created image
+    :type imgpath:      (str)
+    '''
     tmpImg = Image.open(str(imgpath))
     newImg = reorient_img(tmpImg)
     # imgsize = newImg.size
@@ -633,8 +644,9 @@ def get_filename_images(values, folder):
     if folderFileName[0] != '' and folderFileName[0] != folder:
         folder = folderFileName[0]
     if folderFileName[1] == '':
+        print('User pressed OK without providing a filename')
         sg.popup('Error! no filename provided!', 'You did not provide a filename.\n',
-                 'The program can\'t create an image without a filename.', icon=get_icon())
+                 'The program can\'t create an image without a filename.', icon=get_icon(), keep_on_top=True)
     elif folderFileName[1] == 'Cancel':
         print('user Cancelled')
     else:
@@ -645,7 +657,16 @@ def get_filename_images(values, folder):
     return folderFileName[1], full_images
 
 def copy_exif_info(reference_image, imagepath):
-
+    print('reference_image ', reference_image)
+    print('imagepath ', imagepath)
+    ref_img = Image.open(reference_image)
+    ref_exifd = ref_img.getexif()
+    # ref_exifd = ref_img.info['exif']
+    ref_img.close()
+    pil_img = Image.open(imagepath)
+    pil_img.save(imagepath, "JPEG", exif=ref_exifd)
+    pil_img.close()
+    '''
     try:
         print('reference_image ', reference_image)
         print('imagepath ', imagepath)
@@ -655,6 +676,7 @@ def copy_exif_info(reference_image, imagepath):
         ref_img.close()
     except Exception as e:
         print("something went wrong copying the exif info from " + reference_image)
+        pass
 
 
     pil_img = Image.open(imagepath)
@@ -669,4 +691,5 @@ def copy_exif_info(reference_image, imagepath):
     except Exception as e:
         print("something went wrong saving the exif info to " + imagepath)
         os.replace(backuppath, imagepath)
-        #pass
+        pass
+    '''

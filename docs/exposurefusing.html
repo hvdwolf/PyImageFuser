@@ -20,16 +20,19 @@ Almost all camera's have a manual setting to compensate from -2EV (or -3EV) to +
 These manual settings are preferred over the standard "auto" mode which is mostly limited to -1/+1 EV.
 To improve your image, "more is usually better". This means that you can better take the maximum exposure correction values: a -2EV, 0EV and +2EV photo.
 If your camera supports bigger bracketed series, you might use: -2, -1, 0, +1, +2 (EV) to get a bracketed series of 5 photos, or even 7 photos (-3, -2, -1, 0, 1, 2, 3).<br>
-However, "more is not always better". Check the histograms of your images on camera to see if the underexposed one and the over exposed one cover the range you need.<br>
-Some cameras offer the ability to only view afterwards, but most cameras nowadays also have a "live view".
-There is no need for images at even higher or lower EV if they don't contribute to your histogram. There are many excellent articles on the web telling you how to do this.
+However, "more is not always better". Check the histograms of your images in camera to see if the underexposed one and the over exposed one cover the range you need.<br>
+Some cameras offer the ability to only view the histogram afterwards, but most cameras nowadays also have a "live histogram view".
+There is no need for images at even higher or lower EV if they don't contribute to your histogram. There are many excellent articles on the web telling you how to judge this.
 </p>
 <p>If possible use a tripod and find a steady subject. Moving objects are always difficult, even at high shutter speeds.</p>
+<p><strong>Additionally:</strong> Although the simplest and most used option is to use different EV values, you can just as well use different shutter speeds 
+for the same scene or use different apertures in (semi-)manual mode, although this last aperture option would be the least favorible due to the introduced DOF changes.
 
 <H2>Method of Exposure Fusing</H2>
-We use the exposure bracketing method as described by <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.64.7616&rep=rep1&type=pdf" target="_blank">Tom Mertens,
+Enfuse uses the exposure bracketing method as described by <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.64.7616&rep=rep1&type=pdf" target="_blank">Tom Mertens,
 Jan Kautz and Frank Van Reeth</a>.<br>
-Enfuse can do this on a number of criteria, but in this exposure fusion algorithm pixels the most important ones are are weighted using contrast, saturation and well-exposedness. 
+Enfuse can do this on a number of criteria, but the most important criteria are "contrast weight", "exposure weight" and "saturation weight" 
+where the pixels in this exposure fusion algorithm are weighted using contrast, saturation and well-exposedness. 
 After the "weighting" the images are combined using laplacian pyramids.
 <ul>
     <li>Contrast Weight : The contrast criteria favors pixels inside a high-contrast neighborhood</li>
