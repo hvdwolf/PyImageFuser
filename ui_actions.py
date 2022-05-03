@@ -19,28 +19,47 @@ from PIL import Image
 import image_functions
 
 
-def display_org_preview(imgfile):
+def display_org_previewthumb(imgfile, type):
     '''
     This functions displays the embedded preview before any other
     preview image is created
 
     :param imgfile:    the path plus file of the preview image
     :type imgfile:     (str)
+    :param type:       Is it the preview or the thumb
+    :type type:        (str)
     '''
     try:
         print("\n\nimgfile ", imgfile)
         image = Image.open(imgfile)
-        sg.user_settings_filename(path=Path.home())
-        longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
+        if type == 'preview':
+            sg.user_settings_filename(path=Path.home())
+            longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
+        else: # we have the thumb
+            longestSide = 240
         image.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
         bio = io.BytesIO()
         image.save(bio, format='PNG')
+        image.close()
         return bio.getvalue()
     except:
         print("Something went wrong converting ", imgfile)
         pass
         return imgfile
 
+def display_org_thumb(imgfile):
+    try:
+        print("\n\nimgfile ", imgfile)
+        image = Image.open(imgfile)
+        image.thumbnail((200, 200), Image.ANTIALIAS)
+        bio = io.BytesIO()
+        image.save(bio, format='PNG')
+        image.close()
+        return bio.getvalue()
+    except:
+        print("Something went wrong converting ", imgfile)
+        pass
+        return imgfile
 
 def set_fuse_presets(window, values):
     '''
@@ -104,7 +123,16 @@ def fill_images_listbox(window, values):
         if reference_image == None or reference_image == "":
             reference_image = null_image
 
-    return reference_image, folder
+    return reference_image, folder, image_exif_dictionaries
+
+def exif_table(window, exif_dict):
+    table_data = []
+    headings = ['tag', 'value']
+    keys_to_extract = {'ExposureTime', 'ExposureBiasValue', 'FNumber', 'ISOSpeedRatings'}
+    sub_dict = { key:value for key,value in exif_dict.items() if key in keys_to_extract}
+    table_data = list(sub_dict.items())
+    #print(table_data)
+    window['_exiftable_'].update(values=table_data)
 
 
 # Maybe later

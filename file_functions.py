@@ -184,6 +184,6 @@ def show_html_in_browser(main_event):
         html_file = 'index.html'
 
     try:
-        webbrowser.open('file://' + resource_path(os.path.join('docs', html_file)))
+        webbrowser.open('file://' + resource_path(os.path.join(os.path.join(os.path.realpath('.'),'docs', html_file))))
     except:
         sg.popup("Can't open " + html_file, icon=image_functions.get_icon())

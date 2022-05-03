@@ -51,6 +51,7 @@ def get_identifier_tag(filename):
     for k, v in im.getexif().items():
         tag = TAGS.get(k)
         print(k, '\t', tag)
+    im.close()
 
 # Read all the exif info from the loaded images, if available
 def get_all_exif_info(filename):
@@ -148,7 +149,8 @@ def get_basic_exif_info_from_file(filename, output):
             tag = TAGS.get(k)
             exif_dictionary[tag] = v
             #print(TAGS.get(k), " : ", v)
-
+    img.close()
+    
     if (output == 'print'):
         print('\n\n', exif_dictionary)
         # print("\n\n",exif_dictionary['ExposureBiasValue'])
@@ -225,6 +227,7 @@ def resizetopreview(all_values, folder, tmpfolder):
             except Exception as e:
                 failed += ui_actions.logger(e) + '\n'  # get the error from the logger
                 preview_img.save(previewfile, "JPEG")
+                preview_img.close()
                 # pass
             images.append(previewfile)
         else:  # They do exist but we still need to populate or images list
@@ -251,6 +254,30 @@ def resizesingletopreview(folder, tmpfolder, image):
             longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
             org_img.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
             org_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
+            org_img.close()
+        except Exception as e:
+            ui_actions.logger(e)
+            # pass
+
+
+def resizesingletothumb(folder, tmpfolder, image):
+    img = ""
+
+    thumbfile = os.path.join(tmpfolder, 'thumb-' + image)
+    orgfile = os.path.join(folder, image)
+    print('thumbfile ' + thumbfile + '; orgfile ' + orgfile)
+    if not os.path.exists(thumbfile):  # This means that the thumb file does not exist yet
+        print("thumbfile: ", thumbfile, " does not exist yet")
+        if platform.system() == 'Windows':
+            img += "\"" + orgfile.replace("/", "\\") + "\" "
+        else:
+            img += "\"" + orgfile + "\" "
+        try:
+            org_img = Image.open(orgfile)
+            exifd = org_img.getexif()  # Get all exif data from original image
+            org_img.thumbnail((240, 240), Image.ANTIALIAS)
+            org_img.save(thumbfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
+            org_img.close()
         except Exception as e:
             ui_actions.logger(e)
             # pass
@@ -345,17 +372,9 @@ def create_ais_command(all_values, folder, tmpfolder, type):
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'align_image_stack.exe')
         ais_string = cmd_string
     elif platform.system() == 'Darwin':
-        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
-        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
-            cmd_string = 'align_image_stack'
-        else:
-            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
+        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
     else:
-        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
-        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse and align_image_stack are in the PATH
-            cmd_string = 'align_image_stack'
-        else:
-            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'align_image_stack')
+        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'align_image_stack')
 
     if (type == 'preview'):
         cmd_string += ' -a ' + os.path.join(tmpfolder, 'preview_ais_001') + ' '
@@ -453,11 +472,11 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'enfuse.exe')
         enf_string = cmd_string
     elif platform.system() == 'Darwin':
-        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
-        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
-            cmd_string = 'enfuse'
-        else:
-            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'enfuse')
+        #check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        #if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
+        #    cmd_string = 'enfuse'
+        #else:
+        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'enfuse')
     else:
         #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
         check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
@@ -553,6 +572,21 @@ def display_preview(mainwindow, imgfile):
         bio = io.BytesIO()
         image.save(bio, format='PNG')
         mainwindow['-IMAGE-'].update(data=bio.getvalue())
+        image.close()
+    except Exception as e:
+        # print("Something went wrong converting ", imgfile)
+        pass
+
+
+def display_thumb(mainwindow, imgfile):
+    try:
+        image = Image.open(str(imgfile))
+        image = reorient_img(image)
+        image.thumbnail((240, 240), Image.ANTIALIAS)
+        bio = io.BytesIO()
+        image.save(bio, format='PNG')
+        mainwindow['-THUMB-'].update(data=bio.getvalue())
+        image.close()
     except Exception as e:
         # print("Something went wrong converting ", imgfile)
         pass
@@ -563,6 +597,7 @@ def displayImage(imgpath):
     rawimgpath = str(imgpath)
     newImg = Image.open(rawimgpath)
     newImg.show()
+    newImg.close()
 
 def reorient_img(pil_img):
     img_exif = pil_img.getexif()
@@ -604,6 +639,9 @@ def displayImageWindow(imgpath):
     ]
     window = sg.Window('Your image: ' + imgpath, layout, no_titlebar=False, location=(0, 0), size=(scrwidth, scrheight),
                        keep_on_top=True, icon=get_icon())
+
+    tmpImg.close()
+    newImg.close()
 
     while True:
         event, values = window.read()

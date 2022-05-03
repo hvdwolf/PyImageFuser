@@ -68,8 +68,6 @@ def explain_parameters_popup():
 
     list_parameters = [(k, v) for k, v in Explain_parameters.items()]
 
-    # this should be built dynamically, but leave it for now
-
     layout = [
         [sg.Text('Parameters', font = ('Calibri', 16, 'bold'))],
 
@@ -82,14 +80,9 @@ def explain_parameters_popup():
         paramwindow.extend_layout(paramwindow, [[sg.Text(list_parameters[block][0], font=hfont,)]])
         paramwindow.extend_layout(paramwindow, [[sg.Text(list_parameters[block][1], font=tfont, )]])
     paramwindow.extend_layout(paramwindow, [[sg.Push(), sg.Button('OK'), sg.Button('_updater_', visible=False)]])
-    #paramwindow.update(location=(100,100))
-    #paramwindow.move_to_center()
-    #paramwindow.finalize()
     paramwindow.refresh()
     paramwindow.move(100,50)
-    #print(paramwindow.Size)
     move_window_to_center(paramwindow)
-    #paramwindow.move_to_center()
     paramwindow['_updater_'].click()
 
     while True:
@@ -97,9 +90,7 @@ def explain_parameters_popup():
         if event == sg.WIN_CLOSED or event == 'OK':
             break
         elif event == '_updater_':
-            #paramwindow.move_to_center()
             paramwindow.move(100, 50)
-            #paramwindow.finalize()
             paramwindow.refresh()
     paramwindow.close()
 

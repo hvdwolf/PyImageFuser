@@ -41,6 +41,7 @@ full_images = [] # this one contains the complete path names of the original ima
 image_exif_dictionaries = {}
 reference_image = ''
 image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),)
+null_image = ''
 #thread_done = 1
 
 #----------------------------------------------------------------------------------------------
@@ -121,7 +122,8 @@ def main():
             return('Cancel', values)
             break
         elif event == '-FILES-': # user just loaded a bunch of images
-            reference_image, folder = ui_actions.fill_images_listbox(window, values)
+            reference_image, folder, image_exif_dictionaries = ui_actions.fill_images_listbox(window, values)
+            print(image_exif_dictionaries.keys())
         # Check on presets
         elif event == '_alltodefault_':
             ui_actions.set_presets(window, 'defaults')
@@ -177,10 +179,14 @@ def main():
                 window['-FILE LIST-'].update(set_to_index=list_index, )
                 window.refresh()
         elif event == "-FILE LIST-":  # A file was chosen from the listbox
-            #print('A file was chosen from the listbox')
             if values['_display_selected_'] and len(values['-FILE LIST-']) !=0:
                 image_functions.resizesingletopreview(folder, tmpfolder, values['-FILE LIST-'][0])
                 image_functions.display_preview(window, os.path.join(tmpfolder, values['-FILE LIST-'][0]))
+            if len(values['-FILE LIST-']) !=0:
+                image_functions.resizesingletothumb(folder, tmpfolder, values['-FILE LIST-'][0])
+                image_functions.display_thumb(window, os.path.join(tmpfolder, 'thumb-' + values['-FILE LIST-'][0]))
+                #print(image_exif_dictionaries.get(values['-FILE LIST-'][0]))
+                ui_actions.exif_table(window, image_exif_dictionaries.get(values['-FILE LIST-'][0]))
         elif event == '_preset_opencv_' or event == '_preset_enfuse_':
             ui_actions.set_fuse_presets(window, values)
         elif event == '_create_preview_':
