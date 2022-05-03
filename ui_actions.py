@@ -114,6 +114,7 @@ def fill_images_listbox(window, values):
             pathnames.append(file)
             # get all exif date if available
             tmp_reference_image, image_exif_dictionaries[fname] = image_functions.get_all_exif_info(file)
+            #tmp_reference_image, image_exif_dictionaries[fname] = image_functions.get_relevant_exif_info(file)
             if tmp_reference_image != '':
                 reference_image = tmp_reference_image
                 print('reference_image', reference_image)
@@ -127,10 +128,17 @@ def fill_images_listbox(window, values):
 
 def exif_table(window, exif_dict):
     table_data = []
+    exif_list = list(exif_dict.items())
+    print("exif_list: ", exif_list)
     headings = ['tag', 'value']
     keys_to_extract = {'ExposureTime', 'ExposureBiasValue', 'FNumber', 'ISOSpeedRatings'}
     sub_dict = { key:value for key,value in exif_dict.items() if key in keys_to_extract}
+    #print(exif_dict['ExposureTime'])
+    #print(exif_dict['ExposureBiasValue'])
+    #table_data.append()
+    print('sub_dict: ', sub_dict)
     table_data = list(sub_dict.items())
+    #table_data = exif_list
     #print(table_data)
     window['_exiftable_'].update(values=table_data)
 

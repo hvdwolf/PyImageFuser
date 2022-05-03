@@ -25,7 +25,7 @@ More about this, what the parameters mean and tips & tricks to improve your resu
 
 ## Choise of "tools"
 Why use the external enfuse and align_image_stack and not the internal OpenCV/numpy modules to align (alignMTB/ECC/ORB) and exposure fuse (mergeMertens)?  
-I started with [OpenCV](https://github.com/hvdwolf/PyImageFuser/tree/opencv), but in all my tests especially align_image_stack outperforms the OpenCV alignmnent methods. The OpenCV methods are equal at best, but in 50% of the cases they perform worse. Sometimes clearly visible, sometimes visible when zooing in.  
+I started with [OpenCV](https://github.com/hvdwolf/PyImageFuser/tree/opencv), but in all my tests especially align_image_stack outperforms the OpenCV alignmnent methods. The OpenCV methods are equal at best, but in 50% of the cases they perform worse. Sometimes clearly visible, sometimes visible when zooming in.  
 OpenCV mergeMertens is comparable with enfuse (which also uses Mertens), but enfuse is a little more tweakable although you will not use that in 95% of the cases. For "focus stacks" you really need enfuse.
 
 

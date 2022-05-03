@@ -78,11 +78,57 @@ def get_all_exif_info(filename):
                 if v == '0.0' or v == '0' or v == 0.0 or v == 0:
                    reference_image = filename
                    print('reference_image: ', reference_image)
+        # On pillow after jan 2nd 2022 we need additionally the exif.get_ifd(0x8769)
+        for k, v in img.getexif().get_ifd(0x8769).items():
+            tag = TAGS.get(k)
+            exif_dictionary[tag] = v
+            if (tag == 'ExposureBiasValue'):
+                print(TAGS.get(k), ' : ', v)
+                if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                   reference_image = filename
+                   print('reference_image: ', reference_image)
+
     else:
         exif_dictionary['no exif'] = 'no exif'
     img.close()
 
+    #exif_dictionary = {k: str(v).encode("utf-8") for k,v in exif_dictionary.items()}
     return reference_image, exif_dictionary
+
+def get_relevant_exif_info(filename):
+    exif_dictionary={}
+    reference_image = ""
+
+    img=Image.open(filename)
+    exifd = img.getexif()
+    keys = list(exifd.keys())
+    #exif_dictionary['filename'] = img.filename
+    exif_dictionary['width x height'] = img.size
+    for k, v in exifd.items():
+        tag = TAGS.get(k)
+        print(tag)
+        if (TAGS.get(k) == 'ISOSpeedRatings'): #ID=0x8827
+            print(TAGS.get(k), " : ", v)
+            tag=TAGS.get(k)
+            exif_dictionary[tag]=v
+        if (TAGS.get(k) == 'ExposureTime'): # id=0x829a
+            print(TAGS.get(k), " : ", v)
+            tag=TAGS.get(k)
+            exif_dictionary[tag]=v
+        if (TAGS.get(k) == 'ExposureBiasValue'): # id=0x9204
+            tag=TAGS.get(k)
+            exif_dictionary[tag]=v
+            if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                reference_image = filename
+                print('reference_image: ', reference_image)
+        if (TAGS.get(k) == 'FNumber'): # id=0x829d
+            print(TAGS.get(k), " : ", v)
+            tag=TAGS.get(k)
+            exif_dictionary[tag]=v
+
+    return reference_image, exif_dictionary
+
+
 
 '''
 # Read some basic exif info from a file
