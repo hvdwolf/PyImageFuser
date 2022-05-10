@@ -286,7 +286,7 @@ def resizesingletopreview(folder, tmpfolder, image):
 
     previewfile = os.path.join(tmpfolder, image)
     orgfile = os.path.join(folder, image)
-    print('previewfile ' + previewfile + '; orgfile ' + orgfile)
+    #print('previewfile ' + previewfile + '; orgfile ' + orgfile)
     if not os.path.exists(previewfile):  # This means that the preview file does not exist yet
         print("previewfile: ", previewfile, " does not exist yet")
         if platform.system() == 'Windows':
@@ -311,7 +311,7 @@ def resizesingletothumb(folder, tmpfolder, image):
 
     thumbfile = os.path.join(tmpfolder, 'thumb-' + image)
     orgfile = os.path.join(folder, image)
-    print('thumbfile ' + thumbfile + '; orgfile ' + orgfile)
+    #print('thumbfile ' + thumbfile + '; orgfile ' + orgfile)
     if not os.path.exists(thumbfile):  # This means that the thumb file does not exist yet
         print("thumbfile: ", thumbfile, " does not exist yet")
         if platform.system() == 'Windows':

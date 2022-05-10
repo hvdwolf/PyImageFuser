@@ -21,6 +21,12 @@ import file_functions
 import image_functions
 import program_texts
 
+#----------------------------------------------------------------------------------------------
+#------------------------------------- Graph Contstants ---------------------------------------
+BAR_WIDTH = 1  # width of each bar
+BAR_SPACING = 1  # space between each bar
+EDGE_OFFSET = 3  # offset from the left edge for first bar
+GRAPH_SIZE = DATA_SIZE = (200, 100)  # size in pixels
 
 #----------------------------------------------------------------------------------------------
 #---------------------------------------- Menu ------------------------------------------------
@@ -182,8 +188,15 @@ def create_and_show_gui(tmpfolder, startFolder):
 #----------------------------------------------------------------------------------------------
 #--------------------------- Left and right panel -----------------
     thumb_column = [
+        [sg.Text("Thumb")],
         [sg.Image(ui_actions.display_org_previewthumb(os.path.join(os.path.realpath('.'), 'images', 'thumb.png'), 'thumb'), key='-THUMB-',)],
         [sg.Table(values=[(' ' * 15, ' '), (' ' * 15, ' '), (' ' * 15, ' '), (' ' * 15, ' ')], headings=['tag', 'value'], justification='left', alternating_row_color='lightgrey',num_rows=4, hide_vertical_scroll=True, key='_exiftable_', size=(240, 150))]
+    ]
+
+    graph_column = [[sg.Text('Histograms')],
+                   [sg.Graph(GRAPH_SIZE, (0, 0), DATA_SIZE, k='-RGRAPH-')],
+                   [sg.Graph(GRAPH_SIZE, (0, 0), DATA_SIZE, k='-GGRAPH-')],
+                   [sg.Graph(GRAPH_SIZE, (0, 0), DATA_SIZE, k='-BGRAPH-')],
     ]
 
     layoutLeftPanel = [
@@ -195,7 +208,7 @@ def create_and_show_gui(tmpfolder, startFolder):
         #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Multiline(size=(40, 20), visible=False, disabled=True, echo_stdout_stderr=False, key = '_sgOutput_')],
         #[sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Output(size=(40, 15), visible=False, key = '_sgOutput_')],
         #[sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Image(ui_actions.display_org_previewthumb(os.path.join(os.path.realpath('.'), 'images', 'thumb.png'), 'thumb'), key='-THUMB-',)],
-        [sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Column(thumb_column,vertical_alignment="top")],
+        [sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Column(thumb_column,vertical_alignment="top"), sg.Column(graph_column,vertical_alignment="top")],
         [sg.Button('Select all', font = ('Calibri', 10, 'bold'), key='_select_all_'),
          sg.Checkbox('Display selected image as preview when clicked on', key='_display_selected_', enable_events=True),],
     ]

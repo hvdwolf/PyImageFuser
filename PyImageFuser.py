@@ -21,6 +21,7 @@ import requests
 from pathlib import Path
 
 #------- Helper python scripts ----
+import histogram
 import ui_layout
 import ui_actions
 import Settings
@@ -123,7 +124,7 @@ def main():
             break
         elif event == '-FILES-': # user just loaded a bunch of images
             reference_image, folder, image_exif_dictionaries = ui_actions.fill_images_listbox(window, values)
-            print(image_exif_dictionaries.keys())
+            #print(image_exif_dictionaries.keys())
         # Check on presets
         elif event == '_alltodefault_':
             ui_actions.set_presets(window, 'defaults')
@@ -173,6 +174,9 @@ def main():
             list_index.extend(range(0, max))
             window['-FILE LIST-'].update(set_to_index = list_index,)
             window.refresh()
+        elif event == '_histogram_':
+            if len(values['-FILE LIST-']) != 0:
+                histogram.show_histogram(os.path.join(folder, values['-FILE LIST-'][0]))
         elif event == '_display_selected_':
             if values['_display_selected_']:
                 list_index = []
@@ -187,6 +191,7 @@ def main():
                 image_functions.display_thumb(window, os.path.join(tmpfolder, 'thumb-' + values['-FILE LIST-'][0]))
                 #print(image_exif_dictionaries.get(values['-FILE LIST-'][0]))
                 ui_actions.exif_table(window, image_exif_dictionaries.get(values['-FILE LIST-'][0]))
+                histogram.show_histogram(window, os.path.join(folder, values['-FILE LIST-'][0]))
         elif event == '_preset_opencv_' or event == '_preset_enfuse_':
             ui_actions.set_fuse_presets(window, values)
         elif event == '_create_preview_':
