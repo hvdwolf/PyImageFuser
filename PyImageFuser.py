@@ -122,6 +122,8 @@ def main():
             file_functions.remove_tmp_workfolder(tmpfolder)
             return('Cancel', values)
             break
+        elif event == 'Load images':
+            sg.popup_get_file('Load images', no_window=True, initial_folder=ui_actions.which_folder(), file_types = program_texts.image_formats)
         elif event == '-FILES-': # user just loaded a bunch of images
             reference_image, folder, image_exif_dictionaries = ui_actions.fill_images_listbox(window, values)
             #print(image_exif_dictionaries.keys())
