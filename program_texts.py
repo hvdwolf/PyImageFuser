@@ -18,7 +18,7 @@ import PySimpleGUI as sg
 import image_functions
 
 # Some program constants
-Version = '0.2.0'
+Version = '0.5.0'
 image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),)
 
 ################ Some Functions #################
