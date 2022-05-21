@@ -16,6 +16,8 @@ import PySimpleGUI as sg
 import io, os, sys
 from pathlib import Path
 from PIL import Image
+
+import histogram
 import image_functions
 
 
@@ -134,6 +136,16 @@ def exif_table(window, exif_dict):
     #print('sub_dict: ', sub_dict)
     table_data = list(sub_dict.items())
     window['_exiftable_'].update(values=table_data)
+
+
+def clean_screen_after_file_loading(window):
+    window['-THUMB-'].update(display_org_previewthumb(os.path.join(os.path.realpath('.'), 'images', 'thumb.png'), 'thumb'))
+    window['-IMAGE-'].update(display_org_previewthumb(os.path.join(os.path.realpath('.'), 'images', 'preview.png'), 'preview'))
+    empty_dict = {"": "", "": "", "": "", "": "",}
+    exif_table(window, empty_dict)
+    #if graph_ids[0] != None:
+    histogram.clean_histogram(window)
+
 
 
 # Maybe later

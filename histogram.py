@@ -9,6 +9,8 @@ GRAPH_SIZE = DATA_SIZE = (200, 100)  # size in pixels
 
 
 def draw_graph(curgraph, histogram, grcolor):
+    max_histogram = max(histogram)
+
     curgraph.erase()
     curgraph.draw_line((0, 0), (256, 0))
     for x in range(0, 256, 25):
@@ -16,15 +18,16 @@ def draw_graph(curgraph, histogram, grcolor):
         if x != 0:
             # numeric labels
             curgraph.draw_text(str(x), (x, -10), color='black')
-    max_histogram = max(histogram)
+
     #print ("max_histogram value for ", grcolor, ": ", max_histogram, "len ", len(histogram))
+
     for i in range(len(histogram)):
         graph_value = (histogram[i] / max_histogram * GRAPH_SIZE[1])
         curgraph.draw_rectangle(top_left=(i * BAR_SPACING + EDGE_OFFSET, graph_value),
-                             bottom_right=(i * BAR_SPACING + EDGE_OFFSET + BAR_WIDTH, 0), 
-                             line_color=grcolor, fill_color= grcolor)
-
+                                bottom_right=(i * BAR_SPACING + EDGE_OFFSET + BAR_WIDTH, 0),
+                                line_color=grcolor, fill_color=grcolor)
         #curgraph.draw_text(text=graph_value, location=(i*BAR_SPACING+EDGE_OFFSET+25, graph_value+10))
+
 
 
 def show_histogram(window, imgpath):
@@ -40,3 +43,14 @@ def show_histogram(window, imgpath):
     draw_graph(rgraph, r.histogram(), "red")
     draw_graph(ggraph, g.histogram(), "green")
     draw_graph(bgraph, b.histogram(), "blue")
+
+
+
+def clean_histogram(window):
+    rgraph = window['-RGRAPH-']  # type: sg.Graph
+    ggraph = window['-GGRAPH-']
+    bgraph = window['-BGRAPH-']
+
+    rgraph.erase()
+    ggraph.erase()
+    bgraph.erase()

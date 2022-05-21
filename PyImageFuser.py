@@ -46,6 +46,7 @@ null_image = ''
 #thread_done = 1
 
 
+
 #----------------------------------------------------------------------------------------------
 #------------------------------- Helper functions ---------------------------------------------
 # This functions
@@ -117,6 +118,7 @@ def main():
     # Now do the version check
     file_functions.version_check()
 
+
     while True:
         event, values = window.Read(timeout=100)
         if event == sg.WIN_CLOSED or event == '_Close_' or event == 'Exit':
@@ -128,6 +130,7 @@ def main():
         elif event == '-FILES-': # user just loaded a bunch of images
             reference_image, folder, image_exif_dictionaries = ui_actions.fill_images_listbox(window, values)
             #print(image_exif_dictionaries.keys())
+            ui_actions.clean_screen_after_file_loading(window)
         # Check on presets
         elif event == '_alltodefault_':
             ui_actions.set_presets(window, 'defaults')
