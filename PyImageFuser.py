@@ -168,6 +168,8 @@ def main():
             #window.reappear()
         elif event.startswith('Align_Image_stack parameters') or event.startswith('Align_Image_stack tips') or event.startswith('Enfuse parameters') or event.startswith('Why exposure'):
             file_functions.show_html_in_browser(event)
+        elif event == 'System Info':
+            sg.popup(sg.get_versions())
         elif event == 'Preferences' or event =='_btnPreferences_':
             Settings.settings_window()
         elif event == '_select_all_':
