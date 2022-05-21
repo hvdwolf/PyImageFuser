@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# firmware_modder.py - This is the main script to modify the firmware
-# for the AllappUpdate.bin
+# PyImageFuser.py - This is the main script from which everything is called
+# and which contains the user interaction events.
 
 # Copyright (c) 2022, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
@@ -44,6 +44,7 @@ reference_image = ''
 image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),)
 null_image = ''
 #thread_done = 1
+
 
 #----------------------------------------------------------------------------------------------
 #------------------------------- Helper functions ---------------------------------------------
@@ -240,6 +241,7 @@ def main():
                     image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
                     print('preview filepath', os.path.join(tmpfolder, 'preview.jpg'))
                     image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
+                window['_CreateImage_'].set_focus(force=True)
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
         elif event == '_CreateImage_':
@@ -276,6 +278,7 @@ def main():
                     image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
                     if values['_dispFinalIMG_']:
                         image_functions.displayImageWindow(os.path.join(folder, newFileName))
+                window['_CreateImage_'].set_focus(force=True)
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
     window.Close()

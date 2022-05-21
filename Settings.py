@@ -33,7 +33,7 @@ def make_window():
     ]
     previewframelayout = [
         [sg.Text('Preview: pixel size of longest side'),
-         sg.Combo(values=sorted(('480', '640', '800')), default_value=sg.user_settings_get_entry('last_size_chosen', '640'), size=(5, 1), key='-COMBO-')],
+         sg.Combo(values=sorted(('360', '480', '512', '640', '720', '800')), default_value=sg.user_settings_get_entry('last_size_chosen', '640'), size=(5, 1), key='-COMBO-')],
         [sg.Text('(The aspect ratio of the image is preserved)')]
     ]
     jpegframelayout = [

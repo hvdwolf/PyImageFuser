@@ -224,7 +224,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     layout = [
         [sg.Menu(menu_def, tearoff=False)],
         [sg.Column(layoutLeftPanel, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutRightPanel, vertical_alignment='top')],
-        [sg.TabGroup([[sg.Tab('Main', layoutMainTab,),
+        [sg.TabGroup([[sg.Tab('Main', layoutMainTab, key='_MainTab_'),
             sg.Tab('Align_image_stack', layoutAISTab),
             sg.Tab('Enfuse', layoutEnfuseTab, ),
             sg.Tab('Advanced', layoutAdvanced,),
