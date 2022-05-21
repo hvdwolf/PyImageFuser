@@ -39,6 +39,7 @@ menu_def = [
                           'Align_Image_stack tips',
                           'Enfuse parameters (man page)',
                           'Why exposure fuse?',
+                          'Examples',
                           '---',
                           'System Info']],
            ]

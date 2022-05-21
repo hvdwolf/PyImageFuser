@@ -169,7 +169,11 @@ def main():
             #window.disappear()
             program_texts.explain_parameters_popup()
             #window.reappear()
-        elif event.startswith('Align_Image_stack parameters') or event.startswith('Align_Image_stack tips') or event.startswith('Enfuse parameters') or event.startswith('Why exposure'):
+        elif event.startswith('Align_Image_stack parameters') \
+                or event.startswith('Align_Image_stack tips') \
+                or event.startswith('Enfuse parameters') \
+                or event.startswith('Why exposure')\
+                or event.startswith('Examples'):
             file_functions.show_html_in_browser(event)
         elif event == 'System Info':
             sg.popup(sg.get_versions())

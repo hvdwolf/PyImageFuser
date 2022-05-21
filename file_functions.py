@@ -180,6 +180,8 @@ def show_html_in_browser(main_event):
         html_file = 'enfuse.html'
     elif main_event.startswith('Why exposure'):
         html_file = 'exposurefusing.html'
+    elif main_event.startswith('Examples'):
+        html_file = 'examples/examples.html'
     else:
         html_file = 'index.html'
 
