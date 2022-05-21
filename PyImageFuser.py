@@ -114,7 +114,7 @@ def main():
     # Display the GUI to the user
     window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)
 
-    # Now do the version cehck
+    # Now do the version check
     file_functions.version_check()
 
     while True:

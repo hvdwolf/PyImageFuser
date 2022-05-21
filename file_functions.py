@@ -12,7 +12,7 @@
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
 
-import glob, os, shutil, sys, webbrowser
+import certifi, glob, os, shutil, ssl, sys, webbrowser
 from urllib.request import urlopen
 
 import PySimpleGUI as sg
@@ -144,7 +144,7 @@ def version_check():
     second = ""
     third = ""
     new_version = False
-    version_txt = urlopen("https://raw.githubusercontent.com/hvdwolf/PyImageFuser/main/version.txt")
+    version_txt = urlopen("https://raw.githubusercontent.com/hvdwolf/PyImageFuser/main/version.txt", context=ssl.create_default_context(cafile=certifi.where()))
 
     cur_version = (program_texts.Version).split(".")
     print('this version: ', str(cur_version))
@@ -187,3 +187,5 @@ def show_html_in_browser(main_event):
         webbrowser.open('file://' + resource_path(os.path.join(os.path.join(os.path.realpath('.'),'docs', html_file))))
     except:
         sg.popup("Can't open " + html_file, icon=image_functions.get_icon())
+
+#
