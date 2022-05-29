@@ -1,5 +1,5 @@
 # PyImageFuser
-PyImageFuser is a Python3 PySimpleGui program to exposure fuse bracketed images, reduce noise in stacks and do focus stacking. It uses align_image_stack and enfuse to accomplish this.
+PyImageFuser is a Python3 PySimpleGUI program to exposure fuse bracketed images, reduce noise in stacks and do focus stacking. It uses align_image_stack and enfuse to accomplish this.
 
 <!--- ![splash](https://github.com/hvdwolf/PyImageFuser/raw/main/artwork/splash.png) --->
 ![main screen linux](https://github.com/hvdwolf/PyImageFuser/raw/main/screenshots/PIF-main-xfce4.jpg)
