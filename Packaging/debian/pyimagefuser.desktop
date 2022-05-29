@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=PyImageFuser
+Comment=Python PysimpleGui fronted for image exposure fusion using align_image_stack and enfuse
+Exec=/usr/bin/pyimagefuser
+Icon=/usr/share/pyimagefuser/pyimagefuser-logo.png
+Terminal=false
+Type=Application
+Categories=Graphics;Viewer;Utility;2DGraphics;Photography;
+StartupNotify=true
