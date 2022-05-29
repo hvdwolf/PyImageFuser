@@ -77,7 +77,16 @@ chgrp -R root $TEMP_DIR/debian/
 cd $TEMP_DIR/
 dpkg --build debian
 
-mv debian.deb $DWD/$PACKAGE_NAME-$PACKAGE_VERSION.deb
+arch=$(uname -m)
+printf "\nBuilding for machine/architecture: $arch\n"
+if [ "$arch" == 'x86_64' ];
+then 
+  mv debian.deb $DWD/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
+fi
+if [[ $arch =~ ^arm ]];
+then
+  mv debian.deb $DWD/$PACKAGE_NAME-$PACKAGE_VERSION-armhf.deb
+fi
 
 printf "\n\nAs we run as root we now need to clean up our stuff\n"
 rm -rf $RWD/dist $RWD/build $RWD/*.spec
