@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Script to make a universal appimage for PyImageFuser
+# version 0.1, 2022-05-22, hvdw
+
+# Requirements:
+# appimagetool: Download from https://github.com/AppImage/AppImageKit/releases
+# Necessary python3 modules
+
+# Specify the correct path (from the root path)
+EA="enfuse_ais"
+
+if [ "$1" = "" ]
+then
+        printf "\n\nYou have to provide the version\n\n"
+        exit
+fi
+
+VER="$1"
+WORKDIR=$(pwd)
+printf "\n\nWorkdir = $WORKDIR\n\n"
+
+printf "\n\nGo back to root folder of souce code\n"
+cd ../..
+pwd
+
+printf "\nRemove possible previous build and dist folders and recreate binary\n\n"
+rm -rf dist build *.spec
+pyinstaller PyImageFuser.py
+
+#printf "\nNow copy enfuse & align_image_stack\n"
+#cp -r $EA dist/enfuse_ais
+
+#printf "\nCopy resources\n"
+#cp -r images docs dist
+
+printf "\n\nMove back to our AppImage folder\n\n"
+cd $WORKDIR
+#
+printf "Remove, create and step into our AppDir\n\n"
+#
+AppDir="PyImageFuser-x86_64"
+rm -rf ${AppDir}
+mkdir -p ${AppDir}
+cd ${AppDir}
+
+#
+printf "copy the our PyImageFsuer pyinstaller binary into this AppDir folder\n\n"
+#
+cp -r ../../../dist/PyImageFuser/* .
+
+#
+printf "Create folders and copy program icon and desktop file\n\n"
+#
+mkdir -p usr/bin
+mkdir -p usr/share/pyimagefuser
+mkdir -p usr/share/applications
+mkdir -p usr/share/metainfo
+
+
+cp ../../../images/logo.png usr/share/pyimagefuser
+cp ../../../images/logo.png .
+#mv jExifToolGUI.jar usr/share/pyimagefuser
+cp ../pyimagefuser.desktop usr/share/applications
+cp ../pyimagefuser.desktop .
+cp ../pyimagefuser.appdata.xml usr/share/metainfo
+
+
+printf "\n\nNow copy enfuse_ais, docs and images into our AppImage\n\n"
+cp -r ../../../images .
+cp -r ../../../docs .
+cp -r ../../../enfuse_ais/* .
+
+#
+printf "Create the AppRun script\n\n"
+#
+#cd usr/bin
+cat > ./AppRun <<\EOF
+#!/bin/sh
+HERE=$(dirname $(readlink -f "${0}"))
+export PATH="$APPDIR:$APPDIR/usr/bin:${HERE}/usr/local/bin:${HERE}/usr/bin:$PATH"
+"${HERE}"/PyImageFuser ${1+"$@"} &
+EOF
+
+chmod a+x ./AppRun
+
+#
+# We're done in the AppDir
+cd ..
+#rm ${AppDir}/${latest_exif}
+
+#
+# Create the AppImage
+#
+wget -c https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage
+chmod +x appimagetool-x86_64.AppImage
+ARCH=x86_64 ./appimagetool-x86_64.AppImage -n ${AppDir}
+
+#
+# Rename the created app image
+#
+mv PyImageFuser-x86_64.AppImage PyImageFuser-${VER}-x86_64.AppImage

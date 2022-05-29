@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=PyImageFuser
+Comment=PyImageFuser is a graphical exposure bracketing app using enfuse and align_image_stack
+Exec=./PyImageFuser
+Icon=/usr/share/pyimagefuser/logo
+Terminal=false
+Type=Application
+Categories=Graphics;Utility;
+StartupNotify=true

@@ -419,9 +419,11 @@ def create_ais_command(all_values, folder, tmpfolder, type):
         ais_string = cmd_string
     elif platform.system() == 'Darwin':
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
-    else:
-        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'align_image_stack')
-
+    else: # 'Linux'
+        # If it is an appimage we use our builtin align_image_stack via internal usr/bin
+        # If it is a deb, we will install it in the path
+        # If the user runs it from python, (s)he needs to install align_image_stack him-/herself
+        cmd_string = 'align_image_stack'
     if (type == 'preview'):
         cmd_string += ' -a ' + os.path.join(tmpfolder, 'preview_ais_001') + ' '
         # cmd_list.append('--gpu')
@@ -523,13 +525,11 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
         #    cmd_string = 'enfuse'
         #else:
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'enfuse')
-    else:
-        #cmd_string = file_functions.resource_path(os.path.join('enfuse_ais', 'usr', 'bin', 'enfuse'))
-        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
-        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
-            cmd_string = 'enfuse'
-        else:
-            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'usr', 'bin', 'enfuse')
+    else: # 'Linux'
+        # If it is an appimage we use our builtin enfuse via internal usr/bin
+        # If it is a deb, we will install it in the path
+        # If the user runs it from python, (s)he needs to install enfuse him-/herself
+        cmd_string = 'enfuse'
     if type == 'preview_ais':
         cmd_string += ' -v --compression=90 ' + os.path.join(tmpfolder, 'preview_ais_001*') + ' -o ' + os.path.join(tmpfolder, 'preview.jpg ')
         cmd_list.append('-v')

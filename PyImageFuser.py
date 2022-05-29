@@ -110,7 +110,9 @@ def main():
     print("settingsfile: ",settingsFile)
     print("tmpdir", os.path.realpath(tempfile.gettempdir()))
     print("current path ", os.path.realpath('.'))
-    #print(getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller'))
+    print('pyinstaller _MEIPASS ', getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller'))
+    if os.getenv('HERE') != None:
+        print('HERE ', os.getenv('HERE'))
 
     # Display the GUI to the user
     window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)

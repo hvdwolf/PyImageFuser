@@ -11,6 +11,7 @@
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
+import platform
 
 import PySimpleGUI as sg
 import io, os, sys
@@ -19,6 +20,7 @@ from PIL import Image
 
 import histogram
 import image_functions
+import file_functions
 
 
 def display_org_previewthumb(imgfile, type):
@@ -33,7 +35,22 @@ def display_org_previewthumb(imgfile, type):
     '''
     try:
         #print("\n\nimgfile ", imgfile)
-        image = Image.open(imgfile)
+
+        if platform.system() == 'Linux':
+            testpyinstaller = getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller')
+            prefix = os.path.realpath('.')
+            #print("ui_actions HERE ", os.getenv('HERE'))
+            #print('pyinstaller _MEIPASS pyinstonrnot ', pyinstornot)
+            if testpyinstaller != 'NotRunningInPyInstaller':
+                prefix = testpyinstaller;
+            if type == 'preview':
+                 #image = Image.open(os.path.join(os.getenv('HERE'), 'images', 'preview.png'))
+                 image = Image.open(file_functions.resource_path(os.path.join(prefix, 'images', 'preview.png')))
+            else:
+                image = Image.open(file_functions.resource_path(os.path.join(prefix, 'images', 'thumb.png')))
+        else:
+            image = Image.open(imgfile)
+
         if type == 'preview':
             sg.user_settings_filename(path=Path.home())
             longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))

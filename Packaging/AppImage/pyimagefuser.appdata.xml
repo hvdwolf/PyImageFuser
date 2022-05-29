@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>pyimagefuser</id>
+	<metadata_license>CC-BY-SA-3.0</metadata_license>
+	<project_license>GPL-3.0</project_license>
+	<name>PyImageFuser</name>
+	<summary>Graphic User Interface for exposure bracketing using enfuse and align_image_stack</summary>
+	<description>
+		<p>PyImageFuser is a python3/tkinter/pysimplegui Windows/Linux/MacOS graphical frontend for enfuse and align_image_stack</p>
+	</description>
+	<launchable type="desktop-id">pyimagefuser.desktop</launchable>
+	<url type="homepage">https://hvdwolf.github.io/PyImageFuser/</url>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://hvdwolf.github.io/PyImageFuser/screenshots/PIF-main-xfce4.jpg</image>
+		</screenshot>
+	</screenshots>
+	<provides>
+		<id>pyimagefuser.desktop</id>
+	</provides>
+</component>
