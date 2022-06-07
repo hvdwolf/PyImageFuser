@@ -36,7 +36,7 @@ def display_org_previewthumb(imgfile, type):
     try:
         #print("\n\nimgfile ", imgfile)
 
-        if platform.system() == 'Linux':
+        if platform.system() == 'Linux' or platform.system() == 'Darwin':
             testpyinstaller = getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller')
             prefix = os.path.realpath('.')
             #print("ui_actions HERE ", os.getenv('HERE'))

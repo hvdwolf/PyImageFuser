@@ -418,7 +418,14 @@ def create_ais_command(all_values, folder, tmpfolder, type):
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'align_image_stack.exe')
         ais_string = cmd_string
     elif platform.system() == 'Darwin':
-        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
+        #cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
+        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
+        #    cmd_string = 'enfuse'
+             cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'align_image_stack')
+        else:
+             cmd_string = os.path.join(check_pyinstaller, 'enfuse_ais', 'MacOS', 'align_image_stack')
+
     else: # 'Linux'
         # If it is an appimage we use our builtin align_image_stack via internal usr/bin
         # If it is a deb, we will install it in the path
@@ -520,11 +527,12 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
         cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'enfuse.exe')
         enf_string = cmd_string
     elif platform.system() == 'Darwin':
-        #check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
-        #if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
+        check_pyinstaller =getattr (sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        if check_pyinstaller == 'NotRunningInPyInstaller': # we run from the script and assume enfuse is in the PATH
         #    cmd_string = 'enfuse'
-        #else:
-        cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'enfuse')
+            cmd_string = os.path.join(os.path.realpath('.'), 'enfuse_ais', 'MacOS', 'enfuse')
+        else:
+            cmd_string = os.path.join(check_pyinstaller, 'enfuse_ais', 'MacOS', 'enfuse')
     else: # 'Linux'
         # If it is an appimage we use our builtin enfuse via internal usr/bin
         # If it is a deb, we will install it in the path
@@ -700,10 +708,20 @@ def get_icon():
     '''
     This function adds the program icon to the top-left of the displayed windows and popups
     '''
+    '''
     if platform.system() == 'Windows':
         wicon = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images', 'logo.ico')
     else:
         wicon = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images', 'logo.png')
+    '''
+    if platform.system() == 'Linux' or platform.system() == 'Darwin':
+        testpyinstaller = getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller')
+        prefix = os.path.realpath('.')
+        if testpyinstaller != 'NotRunningInPyInstaller':
+            prefix = testpyinstaller;
+        wicon = os.path.join(prefix, 'images', 'logo.png')
+    else: # Windows
+        wicon = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images', 'logo.ico')
 
     return wicon
 
