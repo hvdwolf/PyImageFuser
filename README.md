@@ -40,8 +40,7 @@ Unzip it so some place of your liking and start the binary with:
 * "pyimagefuser &" (Linux deb package)
 * From the folder where downloaded/copied: "PyImageFuser-<version>-x86_64.AppImage &" (Linux x64 AppImage)
 * From the folder where unzipped: "PyImageFuser.exe" (Windows)
-<!-- * "PyImageFuser &" (MacOS). *(There is no bundle yet. Maybe later.)* -->
-*There is no MacOS bundle yet. I still have troubles with internal paths in the bundle.*
+* Open the dmg and drag the PyImageFuser.app to the Applications folder (or another folder of your liking).
 
 **Or:**
 Download this python code and run the following command to install the dependencies:

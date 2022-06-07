@@ -10,6 +10,7 @@
 AppName="PyImageFuser"
 BundleDir="PyImageFuser.app"
 EA="enfuse_ais"
+DMG="PyImageFuser-x86_64"
 
 if [ "$1" = "" ]
 then
@@ -47,3 +48,13 @@ sed  -i '' "s+Version_String+$VERSION+" ${BundleDir}/Contents/Info.plist
 #
 printf "copy the our PyImageFuser pyinstaller binary into this AppDir folder\n\n"
 mv $ROOTDIR/dist/PyImageFuser/* $BundleDir/Contents/MacOS
+
+printf "\nCreate dmg folder and make dmg of it\n"
+rm -rf $DMG $DMG_$VERSION.dmg
+mkdir -p $DMG
+cd $DMG
+ln -s /Applications
+cp ${ROOTDIR}/LICENSE .
+mv ../PyImageFuser.app .
+cd ..
+hdiutil create -fs HFS+ -srcfolder $DMG -volname "$DMG_$VERSION" "$DMG_$VERSION.dmg"
