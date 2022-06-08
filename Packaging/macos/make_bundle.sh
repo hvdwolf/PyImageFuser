@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script to make a bundle for PyImageFuser
-# version 0.1, 2022-06-06, hvdw
+# Script to make a MacOS bundle for PyImageFuser
+# version 0.2, 2022-06-08, hvdw
 
 # Requirements:
 # Necessary python3 modules
@@ -55,6 +55,7 @@ mkdir -p $DMG
 cd $DMG
 ln -s /Applications
 cp ${ROOTDIR}/LICENSE .
+cp ${ROOTDIR}/GPLv* .
 mv ../PyImageFuser.app .
 cd ..
 hdiutil create -fs HFS+ -srcfolder $DMG -volname "$DMG_$VERSION" "$DMG_$VERSION.dmg"

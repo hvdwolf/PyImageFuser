@@ -29,10 +29,11 @@ rmdir /s /s build
 echo "Creating the pyinstaller exe"
 pyinstaller --onefile --noconsole PyImageFuser.py
 
-@echo Copy docs images and enfuse_ais
-xcopy docs dist\docs\ /E
-xcopy images dist\images\ /E
-xcopy enfuse_ais dist\enfuse_ais\ /E
+@echo Copy docs, images, licenses and enfuse_ais
+xcopy docs dist\docs\ /E /S
+xcopy images dist\images\ /E /S
+xcopy enfuse_ais dist\enfuse_ais\ /E /S
+copy GPLv* dist
 
 @echo Now create the zip file
 cd dist

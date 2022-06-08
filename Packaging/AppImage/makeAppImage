@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to make a universal appimage for PyImageFuser
-# version 0.1, 2022-05-22, hvdw
+# version 0.2, 2022-06-08, hvdw
 
 # Requirements:
 # appimagetool: Download from https://github.com/AppImage/AppImageKit/releases
@@ -45,7 +45,7 @@ mkdir -p ${AppDir}
 cd ${AppDir}
 
 #
-printf "copy the our PyImageFsuer pyinstaller binary into this AppDir folder\n\n"
+printf "copy the PyImageFuser pyinstaller binary into this AppDir folder\n\n"
 #
 cp -r ../../../dist/PyImageFuser/* .
 
@@ -66,10 +66,11 @@ cp ../pyimagefuser.desktop .
 cp ../pyimagefuser.appdata.xml usr/share/metainfo
 
 
-printf "\n\nNow copy enfuse_ais, docs and images into our AppImage\n\n"
+printf "\n\nNow copy enfuse_ais, docs, licenses and images into our AppImage\n\n"
 cp -r ../../../images .
 cp -r ../../../docs .
 cp -r ../../../enfuse_ais/* .
+cp -r ../../../GPLv* .
 
 #
 printf "Create the AppRun script\n\n"
@@ -97,6 +98,8 @@ chmod +x appimagetool-x86_64.AppImage
 ARCH=x86_64 ./appimagetool-x86_64.AppImage -n ${AppDir}
 
 #
-# Rename the created app image
+# Rename the created app image and zip it
 #
 mv PyImageFuser-x86_64.AppImage PyImageFuser-${VER}-x86_64.AppImage
+cp ../../GPLv* .
+zip PyImageFuser-${VER}-x86_64.AppImage.zip PyImageFuser-${VER}-x86_64.AppImage GPLv*

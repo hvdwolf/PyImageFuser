@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Script to make a Debian deb image for PyImageFuser
+# version 0.2, 2022-06-08, hvdw
+
 if [ "$1" = "" ]
 then
         printf "\n\nYou have to provide the version\n\n"
@@ -52,6 +55,8 @@ chmod +x $TEMP_DIR/debian/usr/bin/*
 cp *.desktop $TEMP_DIR/debian/usr/share/applications/
 cp copyright $TEMP_DIR/debian/usr/share/common-licenses/$PACKAGE_NAME/ # results in no copyright warning
 cp copyright $TEMP_DIR/debian/usr/share/doc/$PACKAGE_NAME/
+cp $RWD/GPLv* $TEMP_DIR/debian/usr/share/common-licenses/$PACKAGE_NAME/
+cp $RWD/GPLv* $TEMP_DIR/debian/usr/share/doc/$PACKAGE_NAME/
 
 printf "\nCopy/configure our PyInstaller package inside the deb\n" 
 cp -rp $RWD/dist/PyImageFuser/* $TEMP_DIR/debian/usr/share/$PACKAGE_NAME
@@ -87,6 +92,7 @@ if [[ $arch =~ ^arm ]];
 then
   mv debian.deb $DWD/$PACKAGE_NAME-$PACKAGE_VERSION-armhf.deb
 fi
+
 
 printf "\n\nAs we run as root we now need to clean up our stuff\n"
 rm -rf $RWD/dist $RWD/build $RWD/*.spec
