@@ -18,6 +18,7 @@ from pathlib import Path
 import tkinter as tk
 import PySimpleGUI as sg
 from PIL import Image, ExifTags  # to manipulate images and read exif
+Image.LOAD_TRUNCATED_IMAGES = True
 from PIL.ExifTags import TAGS
 
 import file_functions

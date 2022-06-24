@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from PIL import Image
+Image.LOAD_TRUNCATED_IMAGES = True
 import sys
 
 BAR_WIDTH = 1  # width of each bar

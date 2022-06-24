@@ -17,6 +17,7 @@ import PySimpleGUI as sg
 import io, os, sys
 from pathlib import Path
 from PIL import Image
+Image.LOAD_TRUNCATED_IMAGES = True
 
 import histogram
 import image_functions
