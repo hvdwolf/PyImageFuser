@@ -26,10 +26,17 @@ def make_window():
     :return: (sg.Window)  The window that was created
     """
     folderframelayout = [
-        [sg.Text('Specify the default image start folder')],
         [sg.Input(sg.user_settings_get_entry('imgfolder', Path.home()), key='-IMGFOLDER-'), sg.FolderBrowse()],
-        [sg.CB('Always use the last opened folder', sg.user_settings_get_entry('CBlast_opened_folder', False),
-               key='-CBlop-')],
+        [sg.CB('Always use the last opened folder', sg.user_settings_get_entry('CBlast_opened_folder', False), key='-CBlop-')],
+        [sg.VPush()],
+    ]
+    dcrawframelayout = [
+        [sg.Input(sg.user_settings_get_entry('dcrawlocation', ""), key='-DCRAW-'), sg.FileBrowse()],
+    ]
+    ffframelayout = [
+        [sg.Frame('Specify the default image start folder', folderframelayout)],
+        [sg.VPush()],
+        [sg.Frame('Specify the Path to the dcraw binary/.exe', dcrawframelayout)]
     ]
     previewframelayout = [
         [sg.Text('Preview: pixel size of longest side'),
@@ -41,11 +48,17 @@ def make_window():
          sg.Text('Default jpg compression when jpg is chosen as output format')],
     ]
 
+    imgprefslayout = [
+        [sg.Frame('Preview settings', previewframelayout)],
+        [sg.VPush()],
+        [sg.Frame('jpeg compression', jpegframelayout)],
+    ]
+
     layout = [[sg.Text('Preferences', font = ('Calibri', 14, 'bold'))],
               #[sg.Input(sg.user_settings_get_entry('input', ''), k='-IN-')],
-              [sg.Frame('Folder settings', folderframelayout)],
-              [sg.Frame('Preview settings', previewframelayout)],
-              [sg.Frame('jpeg compression', jpegframelayout)],
+              [sg.TabGroup([[sg.Tab('Folder & File', ffframelayout, key='_FFTab_'),
+                             sg.Tab('Image preferences', imgprefslayout),
+              ]])],
               [sg.T('\nPreferences file = ' + sg.user_settings_filename())],
               [sg.Button('Save'), sg.Button('Exit without saving', key='_Exit_')]]
 
@@ -69,6 +82,7 @@ def settings_window():
             # Save some of the values as user settings
             sg.user_settings_set_entry('imgfolder', values['-IMGFOLDER-'])
             sg.user_settings_set_entry('CBlast_opened_folder', values['-CBlop-'])
+            sg.user_settings_set_entry('dcrawloaction', values['-DCRAW-'])
             sg.user_settings_set_entry('last_size_chosen', values['-COMBO-'])
             sg.user_settings_set_entry('jpgCompression', values['_jpgCompression_'])
             sg.popup("Preferences saved", icon=image_functions.get_icon(), auto_close=True, auto_close_duration=2)

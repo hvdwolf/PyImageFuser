@@ -300,12 +300,20 @@ def resizesingletopreview(folder, tmpfolder, image):
             sg.user_settings_filename(path=Path.home())
             longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
             org_img.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
-            org_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
+            if (".tif" in previewfile.lower()) or (".tiff" in previewfile.lower()):
+                print("we have a tif(f) file being " + previewfile)
+                preview_without_extension = os.path.splitext(previewfile)[0]
+                org_img.save(preview_without_extension + ".jpg", "JPEG", exif=exifd)  # Save all exif data from original to resized image
+                previewfile = preview_without_extension + ".jpg"
+            else:
+                org_img.save(previewfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
             org_img.close()
+
         except Exception as e:
             ui_actions.logger(e)
             # pass
 
+    return previewfile
 
 def resizesingletothumb(folder, tmpfolder, image):
     img = ""
@@ -323,12 +331,22 @@ def resizesingletothumb(folder, tmpfolder, image):
             org_img = Image.open(orgfile)
             exifd = org_img.getexif()  # Get all exif data from original image
             org_img.thumbnail((240, 240), Image.ANTIALIAS)
-            org_img.save(thumbfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
+            # we can have tiffs and jpgs, but we always convert to jpg meaning we might need to change the file extension
+            if (".tif" in thumbfile.lower()) or (".tiff" in thumbfile.lower()):
+                print("we have a tif(f) file being " + thumbfile)
+                thumb_without_extension = os.path.splitext(thumbfile)[0]
+                print("thumb_without_extension " + thumb_without_extension)
+                org_img.save(thumb_without_extension + ".jpg", "JPEG", exif=exifd)  # Save all exif data from original to resized image
+                thumbfile = thumb_without_extension + ".jpg"
+            else:
+                org_img.save(thumbfile, "JPEG", exif=exifd)  # Save all exif data from original to resized image
+
             org_img.close()
         except Exception as e:
             ui_actions.logger(e)
             # pass
 
+    return thumbfile
 
 def check_ais_params(all_values):
     '''
@@ -618,9 +636,14 @@ def get_curr_screen_geometry():
 
 
 def display_preview(mainwindow, imgfile):
+    print("imgfile to display ", imgfile)
     try:
         image = Image.open(str(imgfile))
-        image = reorient_img(image)
+        try:
+            image = reorient_img(image)
+        except Exception as e:
+            print("No image orentation data. Mostly due to tiffs created from RAW")
+            pass
         sg.user_settings_filename(path=Path.home())
         longestSide = int(sg.user_settings_get_entry('last_size_chosen', '480'))
         image.thumbnail((longestSide, longestSide), Image.ANTIALIAS)
@@ -629,21 +652,26 @@ def display_preview(mainwindow, imgfile):
         mainwindow['-IMAGE-'].update(data=bio.getvalue())
         image.close()
     except Exception as e:
-        # print("Something went wrong converting ", imgfile)
+        print("Something went wrong converting ", imgfile)
         pass
 
 
 def display_thumb(mainwindow, imgfile):
+    print("thumbfile to display ", imgfile)
     try:
         image = Image.open(str(imgfile))
-        image = reorient_img(image)
+        try:
+            image = reorient_img(image)
+        except Exception as e:
+            print("No image orentation data. Mostly due to tiffs created from RAW")
+            pass
         image.thumbnail((240, 240), Image.ANTIALIAS)
         bio = io.BytesIO()
         image.save(bio, format='PNG')
         mainwindow['-THUMB-'].update(data=bio.getvalue())
         image.close()
     except Exception as e:
-        # print("Something went wrong converting ", imgfile)
+        print("Something went wrong converting ", imgfile)
         pass
 
 
@@ -764,10 +792,22 @@ def copy_exif_info(reference_image, imagepath):
     print('imagepath ', imagepath)
     ref_img = Image.open(reference_image)
     ref_exifd = ref_img.getexif()
+    #print("ref_exifd ", str(ref_exifd))
     # ref_exifd = ref_img.info['exif']
     ref_img.close()
     pil_img = Image.open(imagepath)
-    pil_img.save(imagepath, "JPEG", exif=ref_exifd)
+    dcraw_converted = False
+    for tag, value in ref_exifd.items():
+        #print(tag, value)
+        if 'dcraw' in str(value).lower():
+            # If we have a tiff converted from a RAW, we do not have exif info
+            dcraw_converted = True
+
+    if dcraw_converted:
+        pil_img.save(imagepath, "JPEG")
+    else:
+        pil_img.save(imagepath, "JPEG", exif=ref_exifd)
+
     pil_img.close()
     '''
     try:

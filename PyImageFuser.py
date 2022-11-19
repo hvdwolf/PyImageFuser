@@ -198,11 +198,13 @@ def main():
                 window.refresh()
         elif event == "-FILE LIST-":  # A file was chosen from the listbox
             if values['_display_selected_'] and len(values['-FILE LIST-']) !=0:
-                image_functions.resizesingletopreview(folder, tmpfolder, values['-FILE LIST-'][0])
-                image_functions.display_preview(window, os.path.join(tmpfolder, values['-FILE LIST-'][0]))
+                imgtodisplay = image_functions.resizesingletopreview(folder, tmpfolder, values['-FILE LIST-'][0])
+                #image_functions.display_preview(window, os.path.join(tmpfolder, values['-FILE LIST-'][0]))
+                image_functions.display_preview(window, imgtodisplay)
             if len(values['-FILE LIST-']) !=0:
-                image_functions.resizesingletothumb(folder, tmpfolder, values['-FILE LIST-'][0])
-                image_functions.display_thumb(window, os.path.join(tmpfolder, 'thumb-' + values['-FILE LIST-'][0]))
+                imgtodisplay = image_functions.resizesingletothumb(folder, tmpfolder, values['-FILE LIST-'][0])
+                #image_functions.display_thumb(window, os.path.join(tmpfolder, 'thumb-' + values['-FILE LIST-'][0]))
+                image_functions.display_thumb(window, imgtodisplay)
                 #print(image_exif_dictionaries.get(values['-FILE LIST-'][0]))
                 ui_actions.exif_table(window, image_exif_dictionaries.get(values['-FILE LIST-'][0]))
                 histogram.show_histogram(window, os.path.join(folder, values['-FILE LIST-'][0]))
