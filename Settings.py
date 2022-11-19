@@ -32,6 +32,7 @@ def make_window():
     ]
     dcrawframelayout = [
         [sg.Input(sg.user_settings_get_entry('dcrawlocation', ""), key='-DCRAW-'), sg.FileBrowse()],
+        [sg.Input(sg.user_settings_get_entry('dcrawparams', '-v -w -H 2 -T'), key='-dcrawparams-')]
     ]
     ffframelayout = [
         [sg.Frame('Specify the default image start folder', folderframelayout)],
@@ -82,7 +83,8 @@ def settings_window():
             # Save some of the values as user settings
             sg.user_settings_set_entry('imgfolder', values['-IMGFOLDER-'])
             sg.user_settings_set_entry('CBlast_opened_folder', values['-CBlop-'])
-            sg.user_settings_set_entry('dcrawloaction', values['-DCRAW-'])
+            sg.user_settings_set_entry('dcrawlocation', values['-DCRAW-'])
+            sg.user_settings_set_entry('dcrawparams', values['-dcrawparams-'])
             sg.user_settings_set_entry('last_size_chosen', values['-COMBO-'])
             sg.user_settings_set_entry('jpgCompression', values['_jpgCompression_'])
             sg.popup("Preferences saved", icon=image_functions.get_icon(), auto_close=True, auto_close_duration=2)
