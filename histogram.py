@@ -37,13 +37,17 @@ def show_histogram(window, imgpath):
     ggraph = window['-GGRAPH-']
     bgraph = window['-BGRAPH-']
 
-    image = Image.open(imgpath)
-    r, g, b = image.split()
-    #print("red\n", r.histogram())
+    try:
+        image = Image.open(imgpath)
+        r, g, b = image.split()
+        # print("red\n", r.histogram())
 
-    draw_graph(rgraph, r.histogram(), "red")
-    draw_graph(ggraph, g.histogram(), "green")
-    draw_graph(bgraph, b.histogram(), "blue")
+        draw_graph(rgraph, r.histogram(), "red")
+        draw_graph(ggraph, g.histogram(), "green")
+        draw_graph(bgraph, b.histogram(), "blue")
+    except Exception as e:
+        print("Error opening this image/file")
+        pass
 
 
 

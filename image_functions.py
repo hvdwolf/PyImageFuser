@@ -64,35 +64,43 @@ def get_all_exif_info(filename):
     '''
     exif_dictionary = {}
     reference_image = ""
+    try:
+        # We need a try here in case we have an image we can't open (corrupt, not an image, direct RAW image)
+        img = Image.open(filename)
+        try:
+            exif = img.getexif()
+            if exif is not None:
+                print('image: ', filename)
+                exif_dictionary['filename'] = img.filename
+                exif_dictionary['width x height'] = img.size
+                for k, v in img.getexif().items():
+                    tag = TAGS.get(k)
+                    exif_dictionary[tag] = v
+                    if (tag == 'ExposureBiasValue'):
+                        print(TAGS.get(k), ' : ', v)
+                        if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                            reference_image = filename
+                            print('reference_image: ', reference_image)
+                # On pillow after jan 2nd 2022 we need additionally the exif.get_ifd(0x8769)
+                for k, v in img.getexif().get_ifd(0x8769).items():
+                    tag = TAGS.get(k)
+                    exif_dictionary[tag] = v
+                    if (tag == 'ExposureBiasValue'):
+                        print(TAGS.get(k), ' : ', v)
+                        if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                            reference_image = filename
+                            print('reference_image: ', reference_image)
 
-    img = Image.open(filename)
-    exif = img.getexif()
-    if exif is not None:
-        print('image: ', filename)
-        exif_dictionary['filename'] = img.filename
-        exif_dictionary['width x height'] = img.size
-        for k, v in img.getexif().items():
-            tag = TAGS.get(k)
-            exif_dictionary[tag] = v
-            if (tag == 'ExposureBiasValue'):
-                print(TAGS.get(k), ' : ', v)
-                if v == '0.0' or v == '0' or v == 0.0 or v == 0:
-                   reference_image = filename
-                   print('reference_image: ', reference_image)
-        # On pillow after jan 2nd 2022 we need additionally the exif.get_ifd(0x8769)
-        for k, v in img.getexif().get_ifd(0x8769).items():
-            tag = TAGS.get(k)
-            exif_dictionary[tag] = v
-            if (tag == 'ExposureBiasValue'):
-                print(TAGS.get(k), ' : ', v)
-                if v == '0.0' or v == '0' or v == 0.0 or v == 0:
-                   reference_image = filename
-                   print('reference_image: ', reference_image)
+            else:
+                exif_dictionary['no exif'] = 'no exif'
+        except Exception as e:
+            exif_dictionary['no exif'] = 'no exif'
+            pass
 
-    else:
-        exif_dictionary['no exif'] = 'no exif'
-    img.close()
-
+        img.close()
+    except Exception as e:
+        print("Error opening this image/file")
+        pass
     #exif_dictionary = {k: str(v).encode("utf-8") for k,v in exif_dictionary.items()}
     return reference_image, exif_dictionary
 
