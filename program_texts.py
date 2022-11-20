@@ -18,7 +18,7 @@ import PySimpleGUI as sg
 import image_functions
 
 # Some program constants
-Version = '0.5.1'
+Version = '0.6.0'
 image_formats = (
                  ('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),
                  ('raw image formats', '*.nef *.NEF *.cr2 *.CR2 *.raw *.RAW *.czi *.CZI *.rw2 *.RW2 *.eip *.EIP *.fpx *.FPX *.pcd *.PCD *.fff *.FFF *.dcr *.DCR *.kdc *.KDC *.kqp *.KQP *.arw *.ARW *.lfr *.LFR *.pef *.PEF *.dng *.DNG *.iiq *.IIQ *.raf *.RAF *.rwl *.RWL *.mdc *.MDC *.ari *.ARI *.r3d *.R3D *.mos *.MOS *.crw *.CRW *.nrw *.NRW *.orf *.ORF *.sr2 *.SR2 *.x3f *.X3F *.3fr *.3FR *.dc2 *.DC2 *.mrw *.MRW *.cib *.CIB *.mef *.MEF *.lfp *.LFP *.srw *.SRW *.apu *.APU *.grey *.GREY *.erf *.ERF *.exf *.EXF *.ra2 *.RA2 *.nop *.NOP *.ndd *.NDD *.srf *.SRF *.st7 *.ST7 *.olr *.OLR *.cap *.CAP *.ce2 *.CE2 *.gry *.GRY *.st5 *.ST5 *.ptx *.PTX *.dcs *.DCS *.st8 *.ST8 *.sd1 *.SD1 *.st4 *.ST4 *.gray *.GRAY *.craw *.CRAW *.rwz *.RWZ *.kc2 *.KC2 *.ce1 *.CE1 *.bay *.BAY *.ycbcra *.YCBCRA *.3pr *.3PR *.mfw *.MFW *.st6 *.ST6 *.ia *.IA *.nwb *.NWB *.cmt *.CMT *.sd0 *.SD0'),

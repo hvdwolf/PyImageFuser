@@ -133,9 +133,11 @@ def main():
         elif event == '-FILES-': # user just loaded a bunch of images
             reference_image, folder, image_exif_dictionaries, read_errors = ui_actions.fill_images_listbox(window, values)
             #print(image_exif_dictionaries.keys())
+            print("reference_image " + reference_image)
             if (len(read_errors)>0):
                 sg.Popup("Errors reading file(s):\n\n" + read_errors, icon=image_functions.get_icon(), auto_close=False)
             ui_actions.clean_screen_after_file_loading(window)
+            window['-FILE LIST-'].update()
         # Check on presets
         elif event == '_alltodefault_':
             ui_actions.set_presets(window, 'defaults')
@@ -240,7 +242,7 @@ def main():
                         result = run_commands.run_shell_command(cmdstring, cmd_list, " running align_image_stack ", False)
                         if result == 'OK':
                             cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
-                            print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
+                            #print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
                         else:
                             print("return string from ais ", result)
@@ -274,27 +276,16 @@ def main():
                         if values['_useAIS_']:
                             cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, '')
                             print("\n\n", cmdstring, "\n\n")
-                            result = run_commands.run_shell_command(cmdstring, cmd_list,
-                                                                    '  Now running align_image_stack  \n  Please be patient  ',
-                                                                    False)
+                            result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running align_image_stack  \n  Please be patient  ',False)
                             print("\n\n" + result + "\n\n")
                             if result == 'OK':
-                                cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder,
-                                                                                            'full_ais',
-                                                                                            os.path.join(folder,
-                                                                                                         newFileName))
+                                cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder,'full_ais',os.path.join(folder,newFileName))
                                 print("\n\n", cmdstring, "\n\n")
-                                result = run_commands.run_shell_command(cmdstring, cmd_list,
-                                                                        '  Now running enfuse  \n  Please be patient  ',
-                                                                        False)
+                                result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running enfuse  \n  Please be patient  ',False)
                         else:  # Create full image without using ais
-                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, '',
-                                                                                        os.path.join(folder,
-                                                                                                     newFileName))
+                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, '',os.path.join(folder,newFileName))
                             print("\n\n", cmdstring, "\n\n")
-                            result = run_commands.run_shell_command(cmdstring, cmd_list,
-                                                                    '  Now running enfuse  \n  Please be patient  ',
-                                                                    False)
+                            result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running enfuse  \n  Please be patient  ',False)
                         stoptime = timeit.default_timer()
                         display_processing_time(window, starttime, stoptime)
                         disable_elements(window, False)

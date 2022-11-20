@@ -626,9 +626,9 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
     else:
         cmd_string += tmp_string
     cmd_list.extend(tmp_list)
-    print('finale end create_enfuse_command')
-    print('cmd_string ', cmd_string)
-    print('cmd_list ', cmd_list)
+    #print('finaly end of create_enfuse_command')
+    #print('cmd_string ', cmd_string)
+    #print('cmd_list ', cmd_list)
 
     # return cmd_string
     if platform.system() == 'Windows':
@@ -636,6 +636,28 @@ def create_enfuse_command(all_values, folder, tmpfolder, type, newImageFileName)
     else:
         return cmd_string, cmd_list
 
+
+def create_dcraw_command(filename):
+    '''
+    This function creates the dcraw command for coverting raw images
+
+    :filename:   This is the path/filename of the original RAW image
+    '''
+    cmd_string = ""
+    cmd_list = []
+
+    dcraw_bin = sg.user_settings_get_entry('dcrawlocation', '')
+    if len(dcraw_bin) > 0:
+        dcraw_params = sg.user_settings_get_entry('dcrawparams', '-v -w -H 2 -T')
+        cmd_string = dcraw_bin
+
+        if platform.system() == 'Windows':
+            cmd_list = dcraw_params.split(" ")
+            cmd_list.append(filename.replace("/", "\\"))
+        else:
+            cmd_string += " " + dcraw_params + " \"" + filename + "\" "
+
+    return cmd_string, cmd_list
 
 def get_curr_screen_geometry():
     root = tk.Tk()

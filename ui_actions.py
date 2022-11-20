@@ -22,6 +22,8 @@ Image.LOAD_TRUNCATED_IMAGES = True
 import histogram
 import image_functions
 import file_functions
+import program_texts
+import run_commands
 
 
 def display_org_previewthumb(imgfile, type):
@@ -122,19 +124,33 @@ def fill_images_listbox(window, values):
     window['-FILE LIST-'].update(filenames)
     if values["-FILES-"]:  # or values["-FILES-"] == {}: #empty list returns False
         file_list = values["-FILES-"].split(";")
-        null_image = file_list[0]
+        #null_image = file_list[0]
         reference_image = ''
         for file in file_list:
             # print(f)
             fname = os.path.basename(file)
+            #print("fname = os.path.basename(file) " + fname)
+            fname_extension = os.path.splitext(fname)[1]
+            #print("fname_extension = os.path.splitext(fname)[1] " + fname_extension)
+            if fname_extension.lower() in program_texts.str_raw_img_formats: # We are dealing with RAW images
+                #sg.popup("Converting RAW to tiff using dcraw", icon=image_functions.get_icon(), auto_close=True, auto_close_duration=2)
+                cmdstring, cmd_list = image_functions.create_dcraw_command(file)
+                #print('cmdstring ' + cmdstring + " , cmd_list " + str(cmd_list))
+                result = run_commands.run_shell_command(cmdstring, cmd_list, ' running dcraw on:\n\n' + file, False)
+                fname = os.path.splitext(fname)[0] + ".tiff"
+                file = os.path.splitext(file)[0] + ".tiff"
+
+            filenames.append(fname)
+            pathnames.append(file)
+            null_image = pathnames[0]
             folder = os.path.dirname(os.path.abspath(file))
             # Now save this folder as "last opened folder" to our settings
             sg.user_settings_filename(path=Path.home())
             sg.user_settings_set_entry('last_opened_folder', folder)
-            filenames.append(fname)
-            pathnames.append(file)
+
             # get all exif date if available
             tmp_reference_image, image_exif_dictionaries[fname], read_error = image_functions.get_all_exif_info(file)
+            print("file " + file + "tmp_reference_image " + tmp_reference_image)
             if (len(read_error) > 0):
                 read_errors += read_error + "\n"
             if tmp_reference_image != '':
