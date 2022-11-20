@@ -117,6 +117,7 @@ def which_folder():
 def fill_images_listbox(window, values):
     filenames = []
     pathnames = []
+    read_errors = ""
     image_exif_dictionaries = {}
     window['-FILE LIST-'].update(filenames)
     if values["-FILES-"]:  # or values["-FILES-"] == {}: #empty list returns False
@@ -133,7 +134,9 @@ def fill_images_listbox(window, values):
             filenames.append(fname)
             pathnames.append(file)
             # get all exif date if available
-            tmp_reference_image, image_exif_dictionaries[fname] = image_functions.get_all_exif_info(file)
+            tmp_reference_image, image_exif_dictionaries[fname], read_error = image_functions.get_all_exif_info(file)
+            if (len(read_error) > 0):
+                read_errors += read_error + "\n"
             if tmp_reference_image != '':
                 reference_image = tmp_reference_image
                 print('reference_image', reference_image)
@@ -143,7 +146,7 @@ def fill_images_listbox(window, values):
         if reference_image == None or reference_image == "":
             reference_image = null_image
 
-    return reference_image, folder, image_exif_dictionaries
+    return reference_image, folder, image_exif_dictionaries, read_errors
 
 def exif_table(window, exif_dict):
     table_data = []

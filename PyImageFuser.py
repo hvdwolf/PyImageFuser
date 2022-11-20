@@ -36,6 +36,7 @@ sg.theme('SystemDefault1') # I hate all these colourful, childish themes. Please
 sg.SetOptions(font = ('Helvetica', 12))
 filenames = []
 pathnames = []
+read_errors = ""
 images = [] # This one is used for our calculations
 resized_images = [] # This one contains the complete path names of our resized images
 full_images = [] # this one contains the complete path names of the original images
@@ -130,8 +131,10 @@ def main():
         elif event == 'Load images':
             sg.popup_get_file('Load images', no_window=True, initial_folder=ui_actions.which_folder(), file_types = program_texts.image_formats)
         elif event == '-FILES-': # user just loaded a bunch of images
-            reference_image, folder, image_exif_dictionaries = ui_actions.fill_images_listbox(window, values)
+            reference_image, folder, image_exif_dictionaries, read_errors = ui_actions.fill_images_listbox(window, values)
             #print(image_exif_dictionaries.keys())
+            if (len(read_errors)>0):
+                sg.Popup("Errors reading file(s):\n\n" + read_errors, icon=image_functions.get_icon(), auto_close=False)
             ui_actions.clean_screen_after_file_loading(window)
         # Check on presets
         elif event == '_alltodefault_':
@@ -260,40 +263,54 @@ def main():
         elif event == '_CreateImage_':
             print('User pressed "Create Exposure fused image\n')
             window['_proc_time_'].update('Processing time: --')
-            if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
-                newFileName, full_images = image_functions.get_filename_images(values, folder)
-                if newFileName != '' and newFileName != 'Cancel':
-                    disable_elements(window, True)
-                    window.refresh()
-                    starttime = timeit.default_timer()
-                    newFileName = file_functions.check_filename(values, newFileName)
-                    if values['_useAIS_']:
-                        cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, '')
-                        print("\n\n", cmdstring, "\n\n")
-                        result = run_commands.run_shell_command(cmdstring, cmd_list, '  Now running align_image_stack  \n  Please be patient  ', False)
-                        print("\n\n" + result + "\n\n")
-                        if result == 'OK':
-                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'full_ais', os.path.join(folder, newFileName))
+            if len(read_errors) == 0:
+                if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
+                    newFileName, full_images = image_functions.get_filename_images(values, folder)
+                    if newFileName != '' and newFileName != 'Cancel':
+                        disable_elements(window, True)
+                        window.refresh()
+                        starttime = timeit.default_timer()
+                        newFileName = file_functions.check_filename(values, newFileName)
+                        if values['_useAIS_']:
+                            cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, '')
                             print("\n\n", cmdstring, "\n\n")
-                            result = run_commands.run_shell_command(cmdstring, cmd_list, '  Now running enfuse  \n  Please be patient  ', False)
-                    else:  # Create full image without using ais
-                        cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, '', os.path.join(folder, newFileName))
-                        print("\n\n", cmdstring, "\n\n")
-                        result = run_commands.run_shell_command(cmdstring, cmd_list, '  Now running enfuse  \n  Please be patient  ', False)
-                    stoptime = timeit.default_timer()
-                    display_processing_time(window, starttime, stoptime)
-                    disable_elements(window, False)
-                    window.refresh()
-                    #print('create reference_image: ', reference_image)
-                    #print('null_image', null_image)
-                    if reference_image == "":
-                        reference_image = null_image
-                    image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
-                    if values['_dispFinalIMG_']:
-                        image_functions.displayImageWindow(os.path.join(folder, newFileName))
-                window['_CreateImage_'].set_focus(force=True)
-            else: # 1 or 0 images selected
-                sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
+                            result = run_commands.run_shell_command(cmdstring, cmd_list,
+                                                                    '  Now running align_image_stack  \n  Please be patient  ',
+                                                                    False)
+                            print("\n\n" + result + "\n\n")
+                            if result == 'OK':
+                                cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder,
+                                                                                            'full_ais',
+                                                                                            os.path.join(folder,
+                                                                                                         newFileName))
+                                print("\n\n", cmdstring, "\n\n")
+                                result = run_commands.run_shell_command(cmdstring, cmd_list,
+                                                                        '  Now running enfuse  \n  Please be patient  ',
+                                                                        False)
+                        else:  # Create full image without using ais
+                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, '',
+                                                                                        os.path.join(folder,
+                                                                                                     newFileName))
+                            print("\n\n", cmdstring, "\n\n")
+                            result = run_commands.run_shell_command(cmdstring, cmd_list,
+                                                                    '  Now running enfuse  \n  Please be patient  ',
+                                                                    False)
+                        stoptime = timeit.default_timer()
+                        display_processing_time(window, starttime, stoptime)
+                        disable_elements(window, False)
+                        window.refresh()
+                        # print('create reference_image: ', reference_image)
+                        # print('null_image', null_image)
+                        if reference_image == "":
+                            reference_image = null_image
+                        image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
+                        if values['_dispFinalIMG_']:
+                            image_functions.displayImageWindow(os.path.join(folder, newFileName))
+                    window['_CreateImage_'].set_focus(force=True)
+                else:  # 1 or 0 images selected
+                    sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
+            else:
+                sg.popup("At least one of the files could not be read. This means that no enfused image can be created.", icon=image_functions.get_icon(), auto_close=False)
     window.Close()
 
  

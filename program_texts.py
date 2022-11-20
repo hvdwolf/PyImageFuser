@@ -23,6 +23,9 @@ image_formats = (
                  ('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),
                  ('raw image formats', '*.nef *.NEF *.cr2 *.CR2 *.raw *.RAW *.czi *.CZI *.rw2 *.RW2 *.eip *.EIP *.fpx *.FPX *.pcd *.PCD *.fff *.FFF *.dcr *.DCR *.kdc *.KDC *.kqp *.KQP *.arw *.ARW *.lfr *.LFR *.pef *.PEF *.dng *.DNG *.iiq *.IIQ *.raf *.RAF *.rwl *.RWL *.mdc *.MDC *.ari *.ARI *.r3d *.R3D *.mos *.MOS *.crw *.CRW *.nrw *.NRW *.orf *.ORF *.sr2 *.SR2 *.x3f *.X3F *.3fr *.3FR *.dc2 *.DC2 *.mrw *.MRW *.cib *.CIB *.mef *.MEF *.lfp *.LFP *.srw *.SRW *.apu *.APU *.grey *.GREY *.erf *.ERF *.exf *.EXF *.ra2 *.RA2 *.nop *.NOP *.ndd *.NDD *.srf *.SRF *.st7 *.ST7 *.olr *.OLR *.cap *.CAP *.ce2 *.CE2 *.gry *.GRY *.st5 *.ST5 *.ptx *.PTX *.dcs *.DCS *.st8 *.ST8 *.sd1 *.SD1 *.st4 *.ST4 *.gray *.GRAY *.craw *.CRAW *.rwz *.RWZ *.kc2 *.KC2 *.ce1 *.CE1 *.bay *.BAY *.ycbcra *.YCBCRA *.3pr *.3PR *.mfw *.MFW *.st6 *.ST6 *.ia *.IA *.nwb *.NWB *.cmt *.CMT *.sd0 *.SD0'),
                 )
+# We need below 2 strings to test on type of image for reading, conversions, exif info, etc.
+str_img_formats = '.jpg .jpeg .png .tif .tiff'
+str_raw_img_formats = '.nef .cr2 .raw .czi .rw2 .eip .fpx .pcd .fff .dcr .kdc .kqp .arw .lfr .pef .dng .iiq .raf .rwl .mdc .ari .r3d .mos .crw .nrw .orf .sr2 .x3f .3fr .dc2 .mrw .cib .mef .lfp .srw .apu .grey .erf .exf .ra2 .nop .ndd .srf .st7 .olr .cap .ce2 .gry .st5 .ptx .dcs .st8 .sd1 .st4 .gray .craw .rwz .kc2 .ce1 .bay .ycbcra .3pr .mfw .st6 .ia .nwb .cmt .sd0'
 
 
 ################ Some Functions #################

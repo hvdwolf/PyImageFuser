@@ -64,6 +64,7 @@ def get_all_exif_info(filename):
     '''
     exif_dictionary = {}
     reference_image = ""
+    read_error = ""
     try:
         # We need a try here in case we have an image we can't open (corrupt, not an image, direct RAW image)
         img = Image.open(filename)
@@ -99,10 +100,11 @@ def get_all_exif_info(filename):
 
         img.close()
     except Exception as e:
-        print("Error opening this image/file")
+        print("Error opening this image/file: " + filename)
+        read_error = "Error opening this image/file: " + filename
         pass
     #exif_dictionary = {k: str(v).encode("utf-8") for k,v in exif_dictionary.items()}
-    return reference_image, exif_dictionary
+    return reference_image, exif_dictionary, read_error
 
 def get_relevant_exif_info(filename):
     exif_dictionary={}
