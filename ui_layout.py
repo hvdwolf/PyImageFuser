@@ -56,7 +56,8 @@ def create_and_show_gui(tmpfolder, startFolder):
     layoutMainGeneralCheckBoxes = [
         [sg.Checkbox('Use Align_image_stack', key='_useAIS_', default=True)],
         [sg.Checkbox('Display image after enfusing', key='_dispFinalIMG_', default=True)],
-        [sg.Checkbox('Save final image to source folder', key='_saveToSource_', default=True)]
+        [sg.Checkbox('Save final image to source folder', key='_saveToSource_', default=True)],
+        #[sg.Checkbox('Use OpenCV instead of Enfuse', key='_useOpenCV_', default=False, enable_events=True)]
     ]
     layoutMain_SaveAs = [
         [sg.Text('Save final Image as:')],
@@ -76,7 +77,7 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
     layoutMainText = [
         [sg.Text('In most cases you can simply stay on this main tab. '
-                      'In case your alignment or the final exposure is not correct, then check the other tabs'
+                      'In case your alignment or the final exposure is not correct, please check the other tabs'
                       ' or read some of the Help topics.', size=(30,6),)]
     ]
 
@@ -152,10 +153,29 @@ def create_and_show_gui(tmpfolder, startFolder):
         [sg.Slider(key='_exposure_width_', range=(0, 1), resolution='0.1', default_value='0.2', size=(6, None))]
     ]
     layoutEnfuseTab_Mask = [
-        [sg.Text('Mask')],
+        [sg.Text('Mask', key='_masktext_')],
         [sg.Radio('Soft Mask (Default)', "RADIOMASK", default=True, key='_softmask_')],
         [sg.Radio('Hard Mask', "RADIOMASK", default=False, key='_hardmask_', tooltip='Blending with hard masks is ONLY useful with focus stacks.')]
     ]
+    layoutFusingTab_Presets = [
+        [sg.Text('Presets')],
+        # [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
+        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=True, key='_preset_enfuse_', enable_events=True, tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
+        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=False, key='_preset_opencv_', enable_events=True, tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
+    ]
+    '''
+    layoutEnfuseTab_Mask_Wrap = [
+        [sg.Text('Mask', key='_masktext_')],
+        [sg.Radio('Soft Mask (Default)', "RADIOMASK", default=False, key='_softmask_')],
+        [sg.Radio('Hard Mask', "RADIOMASK", default=True, key='_hardmask_', tooltip='Blending with hard masks is ONLY useful with focus stacks.')],
+        [sg.VPush()],
+        [sg.Text('Wrap')],
+        [sg.Radio('None (Default)', "RADIOWRAP", default=True, key='_none_')],
+        [sg.Radio('Horizontal', "RADIOWRAP", default=False, key='_horizontal_')],
+        [sg.Radio('Vertical', "RADIOWRAP", default=False, key='_vertical_')],
+        [sg.Radio('Both', "RADIOWRAP", default=False, key='_both_')]
+    ]
+    '''
     layoutEnfuseTab_Wrap = [
         [sg.Text('Wrap')],
         [sg.Radio('None (Default)', "RADIOWRAP", default=True, key='_none_')],
@@ -173,8 +193,10 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
     '''
     layoutEnfuseTab = [
+    # sg.Column(layoutEnfuseTab_Mask_Wrap, vertical_alignment='top', key='layoutEnfuseTab_Mask_Wrap')
+    # In case of using OpenCV as well we need to be able to hide this column
     [sg.Column(layoutEnfuseTab_Levels), sg.Column(layoutEnfuseTab_ExposureWeight), sg.Column(layoutEnfuseTab_SaturationWeight), sg.Column(layoutEnfuseTab_ContrastWeight),
-     sg.Column(layoutEnfuseTab_Mask, vertical_alignment='top')],
+     sg.Column(layoutEnfuseTab_Mask, vertical_alignment='top', key='layoutEnfuseTab_Mask_Wrap'), sg.Column(layoutFusingTab_Presets, vertical_alignment='top')],
     ]
     layoutEnfuseAdvanced = [
         [sg.Column(layoutEnfuseTab_EntropyWeight), sg.Column(layoutEnfuseTab_ExposureOptimum),
@@ -187,6 +209,44 @@ def create_and_show_gui(tmpfolder, startFolder):
     layoutAdvanced = [
         [sg.Frame('Align_image_stack',layoutAISadvanced, vertical_alignment='top'), sg.Frame('Enfuse',layoutEnfuseAdvanced)],
     ]
+
+
+# ----------------------------------------------------------------------------------------------
+# --------------------------- OpenCV tabs -----------------
+# ----------------------------------------------------------------------------------------------
+# --------------------------- OpenCV Exposure fuse tabs -----------------
+    layoutExposureFusion_ExposureWeight = [
+        [sg.Text('Exposure\nweight')],
+        [sg.Slider(key='_exposure_weight_', range=(0, 1), resolution='0.1', default_value='0.0')]  # enfuse 1.0
+    ]
+    layoutExposureFusion_SaturationWeight = [
+        [sg.Text('Saturation\nweight')],
+        [sg.Slider(key='_saturation_weight_', range=(0, 1), resolution='0.1', default_value='1.0')]  # enfuse 0.2
+    ]
+    layoutExposureFusion_ContrastWeight = [
+        [sg.Text('Contrast\nweight')],
+        [sg.Slider(key='_contrast_weight_', range=(0, 1), resolution='0.1', default_value='1.0')]  # enfuse 0
+    ]
+    layoutExposureFusion = [
+        [sg.Column(layoutExposureFusion_ExposureWeight),
+         sg.Column(layoutExposureFusion_SaturationWeight),
+         sg.Column(layoutExposureFusion_ContrastWeight)],
+    ]
+
+    layoutFusing_Presets = [
+        [sg.Text('Presets')],
+        # [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
+        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=True, key='_preset_opencv_', enable_events=True,
+                  tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
+        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=False, key='_preset_enfuse_', enable_events=True,
+                  tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
+    ]
+    layoutExposureFusionAll = [
+        [sg.Column(layoutExposureFusion), sg.VSeperator(), sg.Column(layoutFusing_Presets, vertical_alignment='top')],
+        [sg.VPush()],
+        [sg.Push(), sg.Button('Help', font=('Calibri', '10', 'bold'), key='_expfuse_help_')]
+    ]
+
 
 #----------------------------------------------------------------------------------------------
 #--------------------------- Left and right panel -----------------
@@ -231,6 +291,7 @@ def create_and_show_gui(tmpfolder, startFolder):
             sg.Tab('Align_image_stack', layoutAISTab),
             sg.Tab('Enfuse', layoutEnfuseTab, ),
             sg.Tab('Advanced', layoutAdvanced,),
+            #sg.Tab('OpenCV Exposure Fusion', layoutExposureFusionAll,),
         ]])],
         [sg.Push(),
             sg.Button('Create Exposure fused image', font = ('Calibri', 10, 'bold'), key='_CreateImage_', tooltip='Use this option for Exposure fusion'),

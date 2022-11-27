@@ -215,6 +215,8 @@ def main():
                 histogram.show_histogram(window, os.path.join(folder, values['-FILE LIST-'][0]))
         elif event == '_preset_opencv_' or event == '_preset_enfuse_':
             ui_actions.set_fuse_presets(window, values)
+        elif event == '_useOpenCV_':
+            ui_actions.set_levels_status(window,values)
         elif event == '_create_preview_':
             print('User pressed Create Preview\n')
             window['_proc_time_'].update('Processing time: --')

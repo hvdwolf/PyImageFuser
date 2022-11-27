@@ -104,6 +104,37 @@ def set_fuse_presets(window, values):
         window['_contrast_weight_'].update(value=0.0)
 
 
+def set_levels_status(window, values):
+    '''
+    This function reacts to events where OpenCV is chosen or enfuse "re-"chosen. It
+    disables the enfuse options when OpenCV is chosen.
+    OpenCV is currently not used. When it improves in the future it might.
+
+    :param window:          This is the main window which we need to set values
+    :type window:           window
+    :param values:          This is the dictionary containing all UI key variables
+    :type values:           (Dict[Any, Any]) - {Element_key : value}
+    '''
+    if values['_useOpenCV_']:
+        window['layoutEnfuseTab_Mask_Wrap'].update(visible=False)
+        window['_levels_'].update(disabled=True)
+        window['_levels_'].update(visible=False)
+        window['_masktext_'].update('')
+        window['_softmask_'].update(disabled=True)
+        window['_softmask_'].update(visible=False)
+        window['_hardmask_'].update(disabled=True)
+        window['_hardmask_'].update(visible=False)
+    else:
+        window['layoutEnfuseTab_Mask_Wrap'].update(visible=True)
+        window['_levels_'].update(disabled=False)
+        window['_levels_'].update(visible=True)
+        window['_masktext_'].update('Mask')
+        window['_softmask_'].update(disabled=False)
+        window['_softmask_'].update(visible=True)
+        window['_hardmask_'].update(disabled=True)
+        window['_hardmask_'].update(visible=False)
+
+
 def which_folder():
     init_folder = ""
     sg.user_settings_filename(path=Path.home())
