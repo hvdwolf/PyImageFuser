@@ -29,6 +29,7 @@ import image_functions
 import program_texts
 import run_commands
 import file_functions
+import ais_enfuse
 
 
 #------- Some constants & variables -----------
@@ -239,17 +240,17 @@ def main():
                     window.refresh()
                     starttime = timeit.default_timer()
                     if (values['_useAISPreview_']):
-                        cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, 'preview')
+                        cmdstring, cmd_list = ais_enfuse.create_ais_command(values, folder, tmpfolder, 'preview')
                         print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
                         result = run_commands.run_shell_command(cmdstring, cmd_list, " running align_image_stack ", False)
                         if result == 'OK':
-                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
+                            cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
                             #print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
                         else:
                             print("return string from ais ", result)
                     else:  # Create preview without using ais
-                        cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, 'preview', '')
+                        cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder, 'preview', '')
                         print("\n\n", cmdstring, "\n\n")
                         result = run_commands.run_shell_command(cmdstring, cmd_list, ' running enfuse ', False)
                     stoptime = timeit.default_timer()
@@ -276,16 +277,16 @@ def main():
                         starttime = timeit.default_timer()
                         newFileName = file_functions.check_filename(values, newFileName)
                         if values['_useAIS_']:
-                            cmdstring, cmd_list = image_functions.create_ais_command(values, folder, tmpfolder, '')
+                            cmdstring, cmd_list = ais_enfuse.create_ais_command(values, folder, tmpfolder, '')
                             print("\n\n", cmdstring, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running align_image_stack  \n  Please be patient  ',False)
                             print("\n\n" + result + "\n\n")
                             if result == 'OK':
-                                cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder,'full_ais',os.path.join(folder,newFileName))
+                                cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder,'full_ais',os.path.join(folder,newFileName))
                                 print("\n\n", cmdstring, "\n\n")
                                 result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running enfuse  \n  Please be patient  ',False)
                         else:  # Create full image without using ais
-                            cmdstring, cmd_list = image_functions.create_enfuse_command(values, folder, tmpfolder, '',os.path.join(folder,newFileName))
+                            cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder, '',os.path.join(folder,newFileName))
                             print("\n\n", cmdstring, "\n\n")
                             result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running enfuse  \n  Please be patient  ',False)
                         stoptime = timeit.default_timer()
