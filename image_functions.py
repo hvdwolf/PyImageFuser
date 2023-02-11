@@ -13,7 +13,7 @@
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public Licence for more details.
 
-import io, os, math, platform, sys, tempfile
+import io, os, platform, sys
 from pathlib import Path
 import tkinter as tk
 import PySimpleGUI as sg
