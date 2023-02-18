@@ -2,7 +2,7 @@
 
 # ui_actions.py - This python helper scripts executes the ui actions coming from the other scripts
 
-# Copyright (c) 2022, Harry van der Wolf. all rights reserved.
+# Copyright (c) 2022-2023, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public Licence as published
 # by the Free Software Foundation, either version 2 of the Licence, or
@@ -95,14 +95,75 @@ def set_fuse_presets(window, values):
     :type values:           (Dict[Any, Any]) - {Element_key : value}
     '''
     if values['_preset_opencv_']:
-        window['_exposure_weight_'].update(value=0.0)
-        window['_saturation_weight_'].update(value=1.0)
-        window['_contrast_weight_'].update(value=1.0)
+        window['_cv_exposure_weight_'].update(value=0.0)
+        window['_cv_saturation_weight_'].update(value=1.0)
+        window['_cv_contrast_weight_'].update(value=1.0)
     else:  # enfuse defaults
-        window['_exposure_weight_'].update(value=1.0)
-        window['_saturation_weight_'].update(value=0.2)
-        window['_contrast_weight_'].update(value=0.0)
+        window['_cv_exposure_weight_'].update(value=1.0)
+        window['_cv_saturation_weight_'].update(value=0.2)
+        window['_cv_contrast_weight_'].update(value=0.0)
 
+
+def set_preview_radiobuttons(window, values):
+    if values['_display_selected_']:
+        # This means that we use the preview to display one of the input images
+        window['_fusepreview_'].update(disabled=True)
+        window['_stackpreview_'].update(disabled=True)
+    else:
+        window['_fusepreview_'].update(disabled=False)
+        window['_stackpreview_'].update(disabled=False)
+
+def disable_elements(window, disable_elements):
+    '''
+    This function disables / enables some buttons on the screen
+    and does the opposite action for the output element
+
+    :param window:             main window where elements are acted upon
+    :type window:              Window
+    :param disable_elements:   True or False
+    :type disable_elements:    (bool)
+    '''
+
+    if disable_elements:
+        window['_btnLoadImages_'].update(disabled=True)
+        window['_btnPreferences_'].update(disabled=True)
+        window['_select_all_'].update(disabled=True)
+        window['_create_preview_'].update(disabled=True)
+        window['_CreateImage_'].update(disabled=True)
+        window['_create_noise_reduced_'].update(disabled=True)
+        window['_Close_'].update(disabled=True)
+        ##window['_sgOutput_'].update(visible=True, disabled=False, echo_stdout_stderr=True) # When buttons are disabled, output window becomes visible
+        #window['_sgOutput_'].update(visible=True)  # When buttons are disabled, output window becomes visible
+    else:
+        window['_btnLoadImages_'].update(disabled=False)
+        window['_btnPreferences_'].update(disabled=False)
+        window['_select_all_'].update(disabled=False)
+        window['_create_preview_'].update(disabled=False)
+        window['_CreateImage_'].update(disabled=False)
+        window['_create_noise_reduced_'].update(disabled=False)
+        window['_Close_'].update(disabled=False)
+        ##window['_sgOutput_'].update(visible=False, disabled=True, echo_stdout_stderr=False) # When buttons are enabled, output window is hidden
+        #window['_sgOutput_'].update(visible=False) # When buttons are enabled, output window is hidden
+
+def hide_show_buttons_options(window, values):
+    if values['_exposurefusion_']:
+        window['_CreateImage_'].update(visible=True)
+        window['_create_noise_reduced_'].update(visible=False)
+        window['_create_focus_stacked_'].update(visible=False)
+        window['_alignmtb_'].update(disabled=False)
+        window['_ecc_'].update(disabled=False)
+    elif values['_noisereduction_']:
+        window['_create_noise_reduced_'].update(visible=True)
+        window['_CreateImage_'].update(visible=False)
+        window['_create_focus_stacked_'].update(visible=False)
+        window['_alignmtb_'].update(disabled=True)
+        window['_ecc_'].update(disabled=False)
+    elif values['_focusstacking_']:
+        window['_create_focus_stacked_'].update(visible=True)
+        window['_CreateImage_'].update(visible=False)
+        window['_create_noise_reduced_'].update(visible=False)
+        window['_alignmtb_'].update(disabled=True)
+        window['_ecc_'].update(disabled=True)
 
 def set_levels_status(window, values):
     '''
@@ -149,16 +210,22 @@ def which_folder():
 
 def fill_images_listbox(window, values):
     filenames = []
+    other_filenames = []
     pathnames = []
     read_errors = ""
     image_exif_dictionaries = {}
     window['-FILE LIST-'].update(filenames)
+    #if len(files_tuple)>0:
+    #print("fil " + values["-FILES-"])
     if values["-FILES-"]:  # or values["-FILES-"] == {}: #empty list returns False
+        print("files read by user\n" + values["-FILES-"])
         file_list = values["-FILES-"].split(";")
+        #file_list = files_chosen.split(",")
         #null_image = file_list[0]
         reference_image = ''
         for file in file_list:
-            # print(f)
+            #file = file.strip()
+            print("reading file: " + file)
             fname = os.path.basename(file)
             #print("fname = os.path.basename(file) " + fname)
             fname_extension = os.path.splitext(fname)[1]
@@ -181,19 +248,21 @@ def fill_images_listbox(window, values):
 
             # get all exif date if available
             tmp_reference_image, image_exif_dictionaries[fname], read_error = image_functions.get_all_exif_info(file)
-            print("file " + file + "tmp_reference_image " + tmp_reference_image)
+            #print("file " + file + "tmp_reference_image " + tmp_reference_image)
             if (len(read_error) > 0):
                 read_errors += read_error + "\n"
             if tmp_reference_image != '':
                 reference_image = tmp_reference_image
                 print('reference_image', reference_image)
+            else:
+                other_filenames.append(file)
         window['-FILE LIST-'].update(filenames)
         window['-FOLDER-'].update(folder)
         # Check if we now have a reference image, in case the images do not contain (enough) exif info
         if reference_image == None or reference_image == "":
-            reference_image = null_image
+            reference_image = file_list[ int(len(file_list) / 2) ]
 
-    return reference_image, folder, image_exif_dictionaries, read_errors
+    return reference_image, folder, image_exif_dictionaries, other_filenames, file_list, read_errors
 
 def exif_table(window, exif_dict):
     table_data = []
@@ -217,21 +286,37 @@ def clean_screen_after_file_loading(window):
 
 
 # Maybe later
-def set_presets(window, action):
-    if action == 'defaults':
-        print('set patameters to defaults')
-        window['_useAIS_'].update(value=True)
-        window['_dispFinalIMG_'].update(value=True)
-        window['_saveToSource_'].update(value=True)
-        window['_jpg_'].update(value=True)
-
-        window['_autoHfov'].update(value=True)
-        window['_inHFOV_'].update(value='50', disabled=True)
-        window['_correlation_'].update(value='0.9')
-    elif action == 'focusstacking':
-        print('focusstacking')
-    elif action == 'noisereduction':
-        print('noisereduction')
+def set_align_options(window, values):
+    if values['_orb_'] or values['_sift_'] or values['_alignmtb_']:
+        window['_euclidean_'].update(disabled=True)
+        window['_affine_'].update(disabled=True)
+        window['_homography_'].update(disabled=True)
+        window['_translation_'].update(disabled=True)
+        window['_maxfeatures_'].update(disabled=True)
+        window['_termination_eps_'].update(disabled=True)
+        if values['_orb_']:
+            window['_maxfeatures_'].update(disabled=False)
+            window['_keeppercent_'].update(value='0.3', disabled=False)
+            window['_orb_orb_desc_'].update(disabled=False)
+            window['_orb_beblid_desc_'].update(disabled=False)
+        elif values['_sift_']:
+            window['_maxfeatures_'].update(disabled=False)
+            window['_keeppercent_'].update(value='0.65', disabled=False)
+            window['_orb_orb_desc_'].update(disabled=True)
+            window['_orb_beblid_desc_'].update(disabled=True)
+        elif values['_alignmtb_']:
+            window['_maxfeatures_'].update(disabled=True)
+            window['_keeppercent_'].update(disabled=True)
+    elif values['_ecc_']:
+        window['_euclidean_'].update(disabled=False)
+        window['_affine_'].update(disabled=False)
+        window['_homography_'].update(disabled=False)
+        window['_translation_'].update(disabled=False)
+        window['_termination_eps_'].update(disabled=False)
+        window['_maxfeatures_'].update(disabled=True)
+        window['_keeppercent_'].update(disabled=True)
+        window['_orb_orb_desc_'].update(disabled=True)
+        window['_orb_beblid_desc_'].update(disabled=True)
 
 """
 BaseException

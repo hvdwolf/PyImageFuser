@@ -6,19 +6,44 @@
 <link rel="shortcut icon" href="logo.ico" >
 </head>
 <body topmargin="20" leftmargin="50">
-<H2>Align your images</H2>
-OpenCV offers multiple alignment options. In PyImageFuser we can use a number of those alignment methods being:
+<H1>Aligning your images</H1>
+<H2>Why aligining them?</H2>
+Even on a tripod you might have "micro" shake which you will see when pixel-peeping.<br>
+If you do stacking of handheld burst-mode images to reduce noise, in case you are without a tripod and can't use a slow shutter speed in
+combination with a low ISO on a tripod, you better get rid of the first few and last few images
+as they contain the most shake due to camera button press/release.
+
+
+<H2>Alignment methods</H2>
+OpenCV offers one alignment option and multiple keypoint detector options. In PyImageFuser we can use a number of those methods being:
 <ul>
-<li>AlignMTB: This algorithm converts images to median threshold bitmaps (1 for pixels brighter than median luminance and 0 otherwise) and than aligns the resulting bitmaps using bit operations. It is invariant to exposure, so exposure values and camera response are not necessary.</li>
-<li>ECC: Enhanced Correlation Coefficient (ECC) Maximization</li>
-<li>ORB: Oriented FAST and Rotated BRIEF. Actually ORB should not be in this list as ORB is actually a feature based keypoint detector.</li>
+<li><strong>AlignMTB</strong>: This algorithm converts images to median threshold bitmaps (1 for pixels brighter than median luminance and 0 otherwise) and than aligns the resulting bitmaps using bit operations. It is invariant to exposure, so exposure values and camera response are not necessary.</li>
+<li><strong>ECC</strong>: Enhanced Correlation Coefficient (ECC) Maximization</li>
+<li><strong>ORB</strong>: Oriented FAST and Rotated BRIEF.</li>
+<li><strong>SIFT</strong>: Scale Invariant Feature Transform (Note: Since 2020 SIFT is patent-free.</li>
+</ul>
+Note that all these methods are <a href="https://itsfoss.com/what-is-foss/" target="_blank">FOSS</a>. SIFT and SURF are patented.
+
+<p><strong>AlignMTB</strong> is an aligning method using Median Threshold Bitmaps (MTB). This means that the images are first converted to these bitmaps, then having 1 for pixels higher than
+median luminance and 0 for pixels lower than median luminance.
+<p><strong>ECC</strong> is not feature based. It is a motion model alignment algorithm for alignment.<br>
+For more info about ECC see this <a href="https://learnopencv.com/image-alignment-ecc-in-opencv-c-python/" target="_blank">Image Alignment (ECC) in OpenCV</a>
+<p><strong>ORB</strong> is a feature based keypoint detector based on FAST, with rotation enhancements (rotated BRIEF).<br>
+For more info about ORB see this <a href="https://docs.opencv.org/3.4/d1/d89/tutorial_py_orb.html" target="_blank">OpenCV tutorial artcle</a>
+    or this <a href="https://learnopencv.com/image-alignment-feature-based-using-opencv-c-python/" target="_blank">Feature Based Image Alignment using OpenCV</a>.
+<p><strong>SIFT</strong> extracts keypoints and computes its descriptors</p>
+
+<H2>Pros/Cons of the methods</H2>
+<ul>
+    <li>AlignMTB: (Very) fast. Used for aligning images for Exposure Fusion (only), but does not always properly align.</li>
+    <li>ECC: Very slow but accurate. Can be used for stacking (noise reduction) and exposure fusion.</li>
+    <li>ORB: (Very) fast and robust. Used for aligning in (focus) stacks and exposure fusion. Not so good in exposure fusion where you have huge differences
+     in exposure (up to +5/+6 or -5/-6), or on low res images (but who does use these anyway?)</li>
+    <li>SIFT: Very slow but a very good keypoint descriptor.</li>
 </ul>
 
-<p>AlignMTB is an aligning method using Median Threshold Bitmaps (MTB). This means that the images are first converted to these bitmaps, then having 1 for pixels higher than
-median luminance and 0 for pixels lower than median luminance.
-<p>ECC is not feature based. It is a motion model alignment algorithm.
-<p>ORB is a feature based keypoint detector with rotation enhancements (rotated BRIEF), but is more suitable for panoramas and stacks and less for alignment in exposure bracketing.<br>
-For more info about ORB see this <a href="https://docs.opencv.org/3.4/d1/d89/tutorial_py_orb.html" target="_blank">OpenCV tutorial artcle</a>
+
+
 
 <H2>ECC geometric image transformation models:</H2>
 <p><strong>First the simple explanation:</strong><br>
@@ -41,7 +66,7 @@ Now let's assume our image is a piece of paper lying on a table.<br>
 </ul>
 
 
-See for OpenCV geometric transformation in images <a href="https://docs.opencv.org/3.4/da/d6e/tutorial_py_geometric_transformations.html" target="_blank">this</a> short article.
+See for OpenCV geometric transformation in images <a href="https://docs.opencv.org/4.7.0/da/d6e/tutorial_py_geometric_transformations.html" target="_blank">this</a> short article.
 
 
 </body>

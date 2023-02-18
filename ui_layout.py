@@ -2,7 +2,7 @@
 
 # ui_layout.py - This python helper scripts holds the user interface functions
 
-# Copyright (c) 2022, Harry van der Wolf. all rights reserved.
+# Copyright (c) 2022-2023, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public Licence as published
 # by the Free Software Foundation, either version 2 of the Licence, or
@@ -35,9 +35,7 @@ menu_def = [
                ['&Help', ['&About...',
                           '&Credits',
                           'Program buttons',
-                          'Align_Image_stack parameters (man page)' ,
-                          'Align_Image_stack tips',
-                          'Enfuse parameters (man page)',
+                          'Alignment' ,
                           'Why exposure fuse?',
                           'Examples',
                           '---',
@@ -54,26 +52,27 @@ def create_and_show_gui(tmpfolder, startFolder):
 # ---------------- Main tab for the default settings to make an enfused image  -----------------
 
     layoutMainGeneralCheckBoxes = [
-        [sg.Checkbox('Use Align_image_stack', key='_useAIS_', default=True)],
+        #[sg.Checkbox('Use OpenCV (instead of enfuse/AIS', key='_align_', default=True)],
+        [sg.Text("Defaults")],
+        [sg.Checkbox('Align the images', key='_always_align_', default=True)],
+        #[sg.Checkbox('Use Align_image_stack', key='_useAIS_', default=True)],
         [sg.Checkbox('Display image after enfusing', key='_dispFinalIMG_', default=True)],
         [sg.Checkbox('Save final image to source folder', key='_saveToSource_', default=True)],
+        [sg.Checkbox('Show intermediate output from functions', key='_showOutput_', default=False, enable_events=True)]
         #[sg.Checkbox('Use OpenCV instead of Enfuse', key='_useOpenCV_', default=False, enable_events=True)]
     ]
-    layoutMain_SaveAs = [
+    layoutTab_SaveAs = [
         [sg.Text('Save final Image as:')],
         [sg.Radio('.jpg (Default)', "RADIOSAVEAS", default=True, key='_jpg_'), sg.Spin([x for x in range(1, 100)], initial_value="90", key='_jpgCompression_', readonly=True)],
-        [sg.Radio('.Tiff 8bits', "RADIOSAVEAS", default=False, key='_tiff8_')],
-        [sg.Radio('.Tiff 16 bits', "RADIOSAVEAS", default=False, key='_tiff16_'), sg.Combo(['deflate', 'packbits', 'lzw', 'none'], default_value='deflate', key='_tiffCompression')],
-        [sg.Radio('.Tiff 32 bits', "RADIOSAVEAS", default=False, key='_tiff32_')],
-        #[sg.Radio('.png', "RADIOSAVEAS", default=False, key='_png_')]
+        [sg.Radio('.tiff', "RADIOSAVEAS", default=False, key='_tiff_')],
+        [sg.Radio('.png', "RADIOSAVEAS", default=False, key='_png_')]
     ]
+
     layoutMainPresets = [
-        [sg.Text('Presets')],
-        [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
-        [sg.Radio('Default (resets all settings to defaults)', "RADIOPRESET", default=False, key='_alltodefault_', enable_events=True)],
-        [sg.Radio('Reduce noise in a stack of photos', "RADIOPRESET", default=False, key='_noisereduction_', enable_events=True)],
-        [sg.Radio('Focus Stacking', "RADIOPRESET", default=False, key='_focusstacking_', enable_events=True)],
-        [sg.Text('Simplest is: set to default, set to option', font = ('Any', 10, 'italic'))]
+        [sg.Text('What do you want to do?')],
+        [sg.Radio('Exposure fusion', "RADIOPRESETTYPE", default=True, key='_exposurefusion_', enable_events=True)],
+        [sg.Radio('Reduce noise from stack of photos', "RADIOPRESETTYPE", default=False, key='_noisereduction_', enable_events=True)],
+        [sg.Radio('Focus Stacking', "RADIOPRESETTYPE", default=False, key='_focusstacking_', enable_events=True)],
     ]
     layoutMainText = [
         [sg.Text('In most cases you can simply stay on this main tab. '
@@ -82,169 +81,104 @@ def create_and_show_gui(tmpfolder, startFolder):
     ]
 
     layoutMainTab = [
-        # [sg.Column(layoutMainGeneralCheckBoxes), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMain_Presets)]
-        [sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMainText, vertical_alignment='top'),],
-        #[sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMain_SaveAs), sg.VSeperator(), sg.Column(layoutMainPresets, vertical_alignment='top'),],
+        [sg.Column(layoutMainPresets, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), ],
+        #[sg.Column(layoutMainPresets, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMainGeneralCheckBoxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutMainText, vertical_alignment='top'),],
         [sg.VPush()],
-        [sg.Text('Processing time: --', key='_proc_time_', )]
-    ]
-
-# ----------------------------------------------------------------------------------------------
-# -------------------------------- Align_image_stack tab --------------------------------
-    layoutAISInputs = [
-        [ sg.InputText('50', key='_inHFOV_', size=(4, 1), disabled=True, enable_events=True, tooltip='Approximate horizontal field of view of input images, use if EXIF info not complete'), sg.Text("HFOV", tooltip='Approximate horizontal field of view of input images, use if EXIF info not complete'),sg.Checkbox('Auto HFOV', key='_autoHfov', default=True, enable_events=True, tooltip='Use exif info to determine HFOV. If not available, you can override the standard fallback value of 50'), ],
-        [sg.InputText('0.9', key='_correlation_', size=(4, 1), enable_events=True), sg.Text('Correlation threshold')],
-        [sg.InputText('8', key='_inNoCP_', size=(4, 1), enable_events=True), sg.Text('No. of Control points', tooltip='Default is 8. Increase to 20, 30 or 50 in case of not so good results.')],
-        [sg.InputText('3', key='_removeCPerror_', size=(4, 1), enable_events=True), sg.Text('Remove Control points with error > than')],
-        [sg.InputText('1', key='_inScaleDown_', size=(4, 1), enable_events=True), sg.Text('Scale down images by 2^ scale')],
-        [sg.InputText('5', key='_inGridsize_', size=(4, 1), enable_events=True), sg.Text('Grid size (default: 5x5)')],
-    ]
-
-    layoutAIScheckboxes = [
-        [sg.Checkbox('Autocrop images', key='_autoCrop_', default=True, tooltip='Important for hand held images. Autocrop to the area covered by all images.')],
-        [sg.Checkbox('Use GPU for remapping', key='_useGPU_', default=True, tooltip='Be careful. Align_image_stack can crash without GPU support, even without warning')],
-        [sg.Checkbox('Full Frame Fisheye images', key='_fffImages_', default=False)],
-        [sg.Checkbox('Use given order', key='_usegivenorder_', default=False, tooltip='Use in stacks for noise reduction. NOT (!) for exposure bracketing')],
-        #[sg.Checkbox('Assume linear input files', key='_linImages_', default=False,)],
-    ]
-
-    layoutAISadvanced = [
-        [sg.Checkbox('Optimize Field of View for all images except first', key='_OptimizeFOV_', default=False, tooltip='Useful for aligning focus stacks with slightly different magnification. ')],
-        [sg.Checkbox('Optimize image center for all images except first', key='_optimizeImgCenter_', default=False)],
-        [sg.Checkbox('Optimize radial distortion for all images except first', key='_optimizeRadialDistortion_', default=False)],
-        [sg.Checkbox('Optimize X coordinate of camera position', key='_optimixeXposition_', default=False)],
-        [sg.Checkbox('Optimize Y coordinate of camera position', key='_optimixeYposition_', default=False)],
-        [sg.Checkbox('Optimize Z coordinate of camera position', key='_optimixeZposition_', default=False)]
-    ]
-
-    layoutAISTab = [
-        [sg.Column(layoutAIScheckboxes, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutAISInputs, vertical_alignment='top')]
-    ]
-
-# ----------------------------------------------------------------------------------------------
-# --------------------------- Enfuse tab -----------------
-    layoutEnfuseTab_Levels = [
-        [sg.Text('Levels\n')],
-        [sg.Slider(key='_levels_', range=(1, 29), resolution='1', default_value='29', size=(6, None))]
-    ]
-    layoutEnfuseTab_ExposureWeight = [
-        [sg.Text('Exposure\nweight')],
-        [sg.Slider(key='_exposure_weight_', range=(0, 1), resolution='0.1', default_value='1.0', size=(6, None), )]
-    ]
-    layoutEnfuseTab_SaturationWeight = [
-        [sg.Text('Saturation\nweight')],
-        [sg.Slider(key='_saturation_weight_', range=(0, 1), resolution='0.1', default_value='0.2', size=(6, None))]
-    ]
-    layoutEnfuseTab_ContrastWeight = [
-        [sg.Text('Contrast\nweight')],
-        [sg.Slider(key='_contrast_weight_', range=(0, 1), resolution='0.1', default_value='0', size=(6, None))]
-    ]
-    layoutEnfuseTab_EntropyWeight = [
-        [sg.Text('Entropy\nweight')],
-        [sg.Slider(key='_entropy_weight_', range=(0, 1), resolution='0.1', default_value='0', size=(6, None))]
-    ]
-    layoutEnfuseTab_ExposureOptimum = [
-        [sg.Text('Exposure\noptimum')],
-        [sg.Slider(key='_exposure_optimum_', range=(0, 1), resolution='0.1', default_value='0.5', size=(6, None))]
-    ]
-
-    layoutEnfuseTab_ExposureWidth = [
-        [sg.Text('Exposure\nwidth')],
-        [sg.Slider(key='_exposure_width_', range=(0, 1), resolution='0.1', default_value='0.2', size=(6, None))]
-    ]
-    layoutEnfuseTab_Mask = [
-        [sg.Text('Mask', key='_masktext_')],
-        [sg.Radio('Soft Mask (Default)', "RADIOMASK", default=True, key='_softmask_')],
-        [sg.Radio('Hard Mask', "RADIOMASK", default=False, key='_hardmask_', tooltip='Blending with hard masks is ONLY useful with focus stacks.')]
-    ]
-    layoutFusingTab_Presets = [
-        [sg.Text('Presets')],
-        # [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
-        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=True, key='_preset_enfuse_', enable_events=True, tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
-        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=False, key='_preset_opencv_', enable_events=True, tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
-    ]
-    '''
-    layoutEnfuseTab_Mask_Wrap = [
-        [sg.Text('Mask', key='_masktext_')],
-        [sg.Radio('Soft Mask (Default)', "RADIOMASK", default=False, key='_softmask_')],
-        [sg.Radio('Hard Mask', "RADIOMASK", default=True, key='_hardmask_', tooltip='Blending with hard masks is ONLY useful with focus stacks.')],
-        [sg.VPush()],
-        [sg.Text('Wrap')],
-        [sg.Radio('None (Default)', "RADIOWRAP", default=True, key='_none_')],
-        [sg.Radio('Horizontal', "RADIOWRAP", default=False, key='_horizontal_')],
-        [sg.Radio('Vertical', "RADIOWRAP", default=False, key='_vertical_')],
-        [sg.Radio('Both', "RADIOWRAP", default=False, key='_both_')]
-    ]
-    '''
-    layoutEnfuseTab_Wrap = [
-        [sg.Text('Wrap')],
-        [sg.Radio('None (Default)', "RADIOWRAP", default=True, key='_none_')],
-        [sg.Radio('Horizontal', "RADIOWRAP", default=False, key='_horizontal_')],
-        [sg.Radio('Vertical', "RADIOWRAP", default=False, key='_vertical_')],
-        [sg.Radio('Both', "RADIOWRAP", default=False, key='_both_')]
-    ]
-    '''
-    layoutEnfuseTab = [
-        [sg.Column(layoutEnfuseTab_Levels), sg.Column(layoutEnfuseTab_ExposureWeight),
-         sg.Column(layoutEnfuseTab_SaturationWeight), sg.Column(layoutEnfuseTab_ContrastWeight),
-         sg.Column(layoutEnfuseTab_EntropyWeight), sg.Column(layoutEnfuseTab_ExposureOptimum),
-         sg.Column(layoutEnfuseTab_ExposureWidth), sg.VSeperator(),
-         sg.Column(layoutEnfuseTab_Mask, vertical_alignment='top'), sg.Column(layoutEnfuseTab_Wrap, vertical_alignment='top')]
-    ]
-    '''
-    layoutEnfuseTab = [
-    # sg.Column(layoutEnfuseTab_Mask_Wrap, vertical_alignment='top', key='layoutEnfuseTab_Mask_Wrap')
-    # In case of using OpenCV as well we need to be able to hide this column
-    [sg.Column(layoutEnfuseTab_Levels), sg.Column(layoutEnfuseTab_ExposureWeight), sg.Column(layoutEnfuseTab_SaturationWeight), sg.Column(layoutEnfuseTab_ContrastWeight),
-     sg.Column(layoutEnfuseTab_Mask, vertical_alignment='top', key='layoutEnfuseTab_Mask_Wrap'), sg.Column(layoutFusingTab_Presets, vertical_alignment='top')],
-    ]
-    layoutEnfuseAdvanced = [
-        [sg.Column(layoutEnfuseTab_EntropyWeight), sg.Column(layoutEnfuseTab_ExposureOptimum),
-         sg.Column(layoutEnfuseTab_ExposureWidth), sg.VSeperator(),
-         sg.Column(layoutEnfuseTab_Wrap, vertical_alignment='top'),],
-    ]
-
-# ----------------------------------------------------------------------------------------------
-# --------------------------- Advanced tab -----------------
-    layoutAdvanced = [
-        [sg.Frame('Align_image_stack',layoutAISadvanced, vertical_alignment='top'), sg.Frame('Enfuse',layoutEnfuseAdvanced)],
+        [sg.Text('Processing time: --', key='_proc_time_', ), sg.Text('', key='_STATUS_')]
     ]
 
 
 # ----------------------------------------------------------------------------------------------
 # --------------------------- OpenCV tabs -----------------
+
 # ----------------------------------------------------------------------------------------------
-# --------------------------- OpenCV Exposure fuse tabs -----------------
-    layoutExposureFusion_ExposureWeight = [
-        [sg.Text('Exposure\nweight')],
-        [sg.Slider(key='_exposure_weight_', range=(0, 1), resolution='0.1', default_value='0.0')]  # enfuse 1.0
-    ]
-    layoutExposureFusion_SaturationWeight = [
-        [sg.Text('Saturation\nweight')],
-        [sg.Slider(key='_saturation_weight_', range=(0, 1), resolution='0.1', default_value='1.0')]  # enfuse 0.2
-    ]
-    layoutExposureFusion_ContrastWeight = [
-        [sg.Text('Contrast\nweight')],
-        [sg.Slider(key='_contrast_weight_', range=(0, 1), resolution='0.1', default_value='1.0')]  # enfuse 0
-    ]
-    layoutExposureFusion = [
-        [sg.Column(layoutExposureFusion_ExposureWeight),
-         sg.Column(layoutExposureFusion_SaturationWeight),
-         sg.Column(layoutExposureFusion_ContrastWeight)],
+# --------------------------- OpenCV alignment tab -----------------
+    layoutOpenCVTab_align = [
+        [sg.Text('Image alignment method', key='_cv_align_methods_')],
+        [sg.Radio('ORB', "RADIOALIGN", default=True, key='_orb_', enable_events=True, tooltip='Fast and accurate. Less suited for huge exposure differences')],
+        [sg.Radio('SIFT', "RADIOALIGN", default=False, key='_sift_', enable_events=True, tooltip='Accurate. No longer patented after 2020)')],
+        [sg.Radio('ECC', "RADIOALIGN", default=False, key='_ecc_', enable_events=True,
+              tooltip='Only use with huge exposure differences in the images.')],
+        [sg.Radio('alignMTB', "RADIOALIGN", default=False, key='_alignmtb_', enable_events=True,
+              tooltip='alignMTB is very fast but only delivers good results in simple situations.')],
     ]
 
-    layoutFusing_Presets = [
-        [sg.Text('Presets')],
-        # [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
-        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=True, key='_preset_opencv_', enable_events=True,
-                  tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
-        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=False, key='_preset_enfuse_', enable_events=True,
-                  tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
+
+    layoutOpenCVInputs = [
+        [sg.Text('Calculation parameters')],
+        [sg.InputText('500', key='_maxfeatures_', size=(5, 1), enable_events=True), sg.Text('ORB/ECC: max. Features/iterations')],
+        [sg.InputText('0.3', key='_keeppercent_', size=(5, 1), enable_events=True), sg.Text('ORB/SIFT: Keep/Match percentage',
+                                                                                 tooltip='ORB keep percentage defaults to 0.3. SIFT defaults to 0.65.')],
+        [sg.InputText('1e-10', key='_termination_eps_', size=(5, 1), enable_events=True), sg.Text('ECC: Termination eps')],
     ]
-    layoutExposureFusionAll = [
-        [sg.Column(layoutExposureFusion), sg.VSeperator(), sg.Column(layoutFusing_Presets, vertical_alignment='top')],
-        [sg.VPush()],
-        [sg.Push(), sg.Button('Help', font=('Calibri', '10', 'bold'), key='_expfuse_help_')]
+
+    layoutOpenCVTab_ECC_options = [
+        [sg.Text('ECC options', key='_cv_ecc_options_')],
+        [sg.Radio('Euclidean (Default)', "RADIOECC", default=True, key='_euclidean_', disabled=True, tooltip='rotation and shift (translation)')],
+        [sg.Radio('Affine', "RADIOECC", default=False, key='_affine_', disabled=True, tooltip='rotation, shift (translation), scale and shear.')],
+        [sg.Radio('Homography', "RADIOECC", default=False, key='_homography_', disabled=True, tooltip='2D: (rotation, shift, scale and shear) and some 3D effects.')],
+        [sg.Radio('Translation', "RADIOECC", default=False, key='_translation_', disabled=True, tooltip='Only shifted compared to other images')],
+    ]
+    layoutOpenCVTab_ORB_descriptors = [
+        [sg.Text('ORB descriptors', key='_cv_orb_descriptor_')],
+        [sg.Radio('ORB', "RADIOORBD", default=True, key='_orb_orb_desc_')],
+        [sg.Radio('BEBLID', "RADIOORBD", default=False, key='_orb_beblid_desc_')],
+    ]
+
+    layoutOpenCV_descriptors_Inputs = [
+        [sg.Text('ORB descriptors', key='_cv_orb_descriptor_', visible=False)],
+        [sg.Radio('ORB', "RADIOORBD", default=True, key='_orb_orb_desc_', visible=False)],
+        [sg.Radio('BEBLID', "RADIOORBD", default=False, key='_orb_beblid_desc_', visible=False)],
+        #[sg.HSeparator()],
+        [sg.Text('Calculation parameters')],
+        [sg.InputText('500', key='_maxfeatures_', size=(5, 1), enable_events=True),
+         sg.Text('ORB/ECC: max. Features/iterations')],
+        [sg.InputText('0.3', key='_keeppercent_', size=(5, 1), enable_events=True),
+         sg.Text('ORB/SIFT: Keep/Match percentage',
+                 tooltip='ORB keep percentage defaults to 0.3. SIFT defaults to 0.65.')],
+        [sg.InputText('1e-10', key='_termination_eps_', size=(5, 1), disabled=True, enable_events=True),
+         sg.Text('ECC: Termination eps')],
+    ]
+
+    layoutAlignTab = [
+        # [sg.Text("Align options")],
+        [sg.Column(layoutOpenCVTab_align, vertical_alignment='top'), sg.VSeperator(),
+         sg.Column(layoutOpenCV_descriptors_Inputs, vertical_alignment='top'), sg.VSeperator(),
+         sg.Column(layoutOpenCVTab_ECC_options, vertical_alignment='top'),
+         #sg.Column(layoutOpenCVInputs, vertical_alignment='top')
+        ]
+    ]
+# ----------------------------------------------------------------------------------------------
+# --------------------------- OpenCV exposure fusion tab -----------------
+    layoutOpenCV_ExposureWeight = [
+        [sg.Text('Exposure\nweight')],
+        [sg.Slider(key='_cv_exposure_weight_', range=(0, 1), resolution='0.1', default_value='0', size=(6, None), )]
+    ]
+    layoutOpenCV_SaturationWeight = [
+        [sg.Text('Saturation\nweight')],
+        [sg.Slider(key='_cv_saturation_weight_', range=(0, 1), resolution='0.1', default_value='1.0', size=(6, None))]
+    ]
+    layoutOpenCV_ContrastWeight = [
+        [sg.Text('Contrast\nweight')],
+        [sg.Slider(key='_cv_contrast_weight_', range=(0, 1), resolution='0.1', default_value='1.0', size=(6, None))]
+    ]
+
+    layoutCVFusing_Presets = [
+        [sg.Text('Presets')],
+        [sg.Radio('OpenCV defaults', "RADIOPRESET", default=True, key='_preset_opencv_', enable_events=True,
+              tooltip='Ew=0.0, Sw=1.0, Cw=1.0')],
+        # [sg.Radio('None', "RADIOPRESET", default=True, key='_preset_none_')],
+        [sg.Radio('Enfuse defaults', "RADIOPRESET", default=False, key='_preset_enfuse_', enable_events=True,
+              tooltip='Ew=1.0, Sw=0.2, Cw=0.0')],
+    ]
+
+    layoutOpenCVTab_fuseoptions = [
+        #[sg.Text('Exposure fusing options')],
+        [sg.Column(layoutOpenCV_SaturationWeight,vertical_alignment='top'), sg.Column(layoutOpenCV_ContrastWeight,vertical_alignment='top'),
+         sg.Column(layoutOpenCV_ExposureWeight,vertical_alignment='top'),
+         sg.VSeperator(),
+         sg.Column(layoutCVFusing_Presets, vertical_alignment='top')
+         ]
     ]
 
 
@@ -265,11 +199,9 @@ def create_and_show_gui(tmpfolder, startFolder):
     layoutLeftPanel = [
         [sg.In(size=(1, 1), enable_events=True, key="-FILES-", visible=False),
             sg.FilesBrowse(button_text = 'Load Images', font = ('Calibri', 10, 'bold'), initial_folder=ui_actions.which_folder(), file_types = program_texts.image_formats, key='_btnLoadImages_'),
+            #sg.Button('Load Images', font = ('Calibri', 10, 'bold'), key='_btnLoadImages_'),
             sg.Button('Preferences', font = ('Calibri', 10, 'bold'), key='_btnPreferences_')],
         [sg.Text('Images Folder:'), sg.Text( key='-FOLDER-', font = ('Calibri', 10, 'italic'), )],
-        #[sg.Listbox(values=[], enable_events=True, size=(40, 20), select_mode='multiple', key="-FILE LIST-"), sg.Multiline(size=(40, 20), visible=False, disabled=True, echo_stdout_stderr=False, key = '_sgOutput_')],
-        #[sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Output(size=(40, 15), visible=False, key = '_sgOutput_')],
-        #[sg.Listbox(values=[], enable_events=True, size=(40, 15), select_mode='multiple', key="-FILE LIST-"), sg.Image(ui_actions.display_org_previewthumb(os.path.join(os.path.realpath('.'), 'images', 'thumb.png'), 'thumb'), key='-THUMB-',)],
         [sg.Listbox(values=[], enable_events=True, size=(35, 15), select_mode='multiple', key="-FILE LIST-"), sg.Column(thumb_column,vertical_alignment="top"), sg.Column(graph_column,vertical_alignment="top")],
         [sg.Button('Select all', font = ('Calibri', 10, 'bold'), key='_select_all_'),
          sg.Checkbox('Display selected image as preview when clicked on', key='_display_selected_', enable_events=True),],
@@ -278,26 +210,51 @@ def create_and_show_gui(tmpfolder, startFolder):
     layoutRightPanel = [
         [sg.Image(ui_actions.display_org_previewthumb(os.path.join(os.path.realpath('.'), 'images', 'preview.png'), 'preview'),  key='-IMAGE-')],
         [sg.Button('(Re)Create Preview', font=('Calibri', 10, 'bold'), key='_create_preview_'),
-         sg.Checkbox('Use Align_image_stack', key='_useAISPreview_', default=True)],
+         sg.Checkbox('Align preview', key='_align_preview_', default=True),
+         ],
     ]
 
 
 #----------------------------------------------------------------------------------------------
 #--------------------------- Final Window layout -----------------
+    layoutCloseButton = [
+       [sg.Button('Close', font = ('Calibri', 10, 'bold'), key = '_Close_'),],
+    ]
+
+    layoutActionbuttons = [
+        [sg.Button('Create Exposure fused image', font=('Calibri', 10, 'bold'), key='_CreateImage_',
+                  tooltip='Use this option for Exposure fusion'),
+        sg.Button('Create noise reduced image from stack', font=('Calibri', 10, 'bold'), key='_create_noise_reduced_',
+                  tooltip='Use this option for noise reduction in a stack of images', visible=False),
+        sg.Button('Create focus stacked image', font=('Calibri', 10, 'bold'), key='_create_focus_stacked_',
+                  tooltip='Use this option for greater depth of field (DOF) from a stack of images', visible=False),
+        ]
+    ]
+
+    layoutTabLogging = [
+        [sg.Text("Program and function INFO output"), sg.Checkbox('Also show Debug info', key='-DEBUG-', enable_events=True),],
+        [sg.Multiline(size=(140,35), key="-MLINE-" , enable_events=True, reroute_cprint=True, autoscroll=True, reroute_stdout=True)],
+    ]
+    layoutTabImages = [
+        [sg.Column(layoutLeftPanel, vertical_alignment='top'), sg.VSeperator(),
+         sg.Column(layoutRightPanel, vertical_alignment='top')],
+        [sg.TabGroup([[sg.Tab('Main', layoutMainTab, key='_MainTab_'),
+            #sg.Tab('OpenCV', layoutOpenCVTab),
+            sg.Tab('Image alignment', layoutAlignTab),
+            sg.Tab('Exposure Fusing options', layoutOpenCVTab_fuseoptions),
+            sg.Tab('Output image type', layoutTab_SaveAs),
+        ]])],
+    ]
+
     layout = [
         [sg.Menu(menu_def, tearoff=False)],
-        [sg.Column(layoutLeftPanel, vertical_alignment='top'), sg.VSeperator(), sg.Column(layoutRightPanel, vertical_alignment='top')],
-        [sg.TabGroup([[sg.Tab('Main', layoutMainTab, key='_MainTab_'),
-            sg.Tab('Align_image_stack', layoutAISTab),
-            sg.Tab('Enfuse', layoutEnfuseTab, ),
-            sg.Tab('Advanced', layoutAdvanced,),
-            #sg.Tab('OpenCV Exposure Fusion', layoutExposureFusionAll,),
+        [sg.TabGroup([[sg.Tab(' Main Tab ', layoutTabImages, key='_layoutTabImages_', ),
+            sg.Tab(' Logging / Program output ', layoutTabLogging, key='_layoutTabLogging_',),
         ]])],
         [sg.Push(),
-            sg.Button('Create Exposure fused image', font = ('Calibri', 10, 'bold'), key='_CreateImage_', tooltip='Use this option for Exposure fusion'),
-            #sg.Button('Create noise reduced image', font = ('Calibri', 10, 'bold'), key='_noise_reduction_', tooltip='Use this option for noise reduction'),
-            sg.Button('Close', font = ('Calibri', 10, 'bold'), key = '_Close_')]
+            sg.Column(layoutActionbuttons), sg.Column(layoutCloseButton),
+        ]
     ]
 
     # Open the window and return it to pyimagefuser
-    return sg.Window('PyImageFuser ' + program_texts.Version, layout, icon=image_functions.get_icon())
+    return sg.Window('PyImageFuser ' + program_texts.Version, layout, icon=image_functions.get_icon(), finalize=True)

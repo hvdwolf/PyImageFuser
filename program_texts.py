@@ -69,17 +69,17 @@ def move_window_to_center(self):
 def insert_newlines(string, every=64):
     return '\n'.join(string[i:i+every] for i in range(0, len(string), every))
 
-def explain_parameters_popup():
+def explain_buttons_popup():
     hfont = ('Calibri', 12, 'bold')
     tfont = ('Calibri', 10, 'normal')
 
-    list_parameters = [(k, v) for k, v in Explain_parameters.items()]
+    list_parameters = [(k, v) for k, v in Explain_buttons.items()]
 
     layout = [
-        [sg.Text('Parameters', font = ('Calibri', 16, 'bold'))],
+        [sg.Text('Program buttons', font = ('Calibri', 16, 'bold'))],
 
     ]
-    paramwindow = sg.Window('Program parameters', layout, finalize=True, keep_on_top=True, icon=image_functions.get_icon(), location=(300, 50))
+    paramwindow = sg.Window('Program buttons', layout, finalize=True, keep_on_top=True, icon=image_functions.get_icon(), location=(300, 50))
 
     max = len(list_parameters)
     blocks = range(max)
@@ -114,9 +114,8 @@ The program can\'t continue. Please check your images carefully.'''
 about_message = 'About PyImageFuser, Version ' + Version + '\n\n'
 about_message += 'PyImageFuser can be used for exposure bracketing, noise reduction and focus stacking.\n\n'
 about_message += 'PyImageFuser is built using Python3 and PySimpleGui.\n'
-about_message += 'PyImageFuser uses the external tools enfuse and align_image_stack.\n\n'
+about_message += 'PyImageFuser uses OpenCV (ORB, ECC, alignMTB, MergeMertens).\n\n'
 about_message += 'PyImageFuser is released under GPL v3.\n'
-about_message += 'enfuse and align_image_stack are released under GPL v2.\n'
 about_message += 'You should find the license with this software.\n\n'
 about_message += 'Author: Harry van der Wolf.'
 
@@ -126,21 +125,18 @@ Used packages:
 - tkinter
 - PySimpleGUI
 - PIL (pillow)
-
-Used code (Thanks to the writers):
-- align_image_stack by Pablo d'Angelo. Also contains contributions from:
-  Douglas Wilkins, Ippei Ukai, Ed Halley, Bruno Postle, Gerry Patterson and Brent Townshend.  
-  Stereo functionality added by Vladimir Nadvornik. 
-  
-- enfuse by by Andrew Mihal, Christoph Spiel and others.
+- OpenVC
+- numpy
 '''
 
 # Add a \n every max. 78 characters
-Explain_parameters = {
-    "Always align images" : "Even on a tripod you might have minimal movement causing misalignment and therefore unsharp blended images.\nAligning them will improve sharpness, using either alignMTB or ECC.",
+Explain_buttons = {
+    "Always align images" : "Even on a tripod you might have minimal movement causing misalignment and therefore unsharp blended images.\nAligning them will improve sharpness.",
     "Display image after exposure fusing" : "After the image has been created and saved, it will be displayed in a python internal viewer window.",
     "Save final image to source folder" : "Save the image to the source folder, e.g. only ask filename",
     "Create exposure fused image" : "Merge the different exposures of the same scene into a better exposed image",
+    "Create noise reduced image from stack" : "Merge the stack of photos to reduce the noise with a factor of √(number of images)",
+    "Create focus stacked image" : "Use this option for greater depth of field (DOF) from a stack of images"
 }
 
 

@@ -1,4 +1,7 @@
 PySimpleGUI
 requests
 Pillow
+numpy
+opencv-python
+imutils
 

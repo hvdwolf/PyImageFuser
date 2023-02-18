@@ -3,7 +3,7 @@
 # PyImageFuser.py - This is the main script from which everything is called
 # and which contains the user interaction events.
 
-# Copyright (c) 2022, Harry van der Wolf. all rights reserved.
+# Copyright (c) 2022-2023, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public Licence as published
 # by the Free Software Foundation, either version 2 of the Licence, or
@@ -19,6 +19,8 @@ import os, sys , tempfile, timeit
 # Necessary for windows
 import requests
 from pathlib import Path
+import cv2
+import threading
 
 #------- Helper python scripts ----
 import histogram
@@ -27,15 +29,17 @@ import ui_actions
 import Settings
 import image_functions
 import program_texts
-import run_commands
 import file_functions
-import ais_enfuse
+import opencv_functions
+
 
 
 #------- Some constants & variables -----------
 sg.theme('SystemDefault1') # I hate all these colourful, childish themes. Please play with it and then grow up.
 sg.SetOptions(font = ('Helvetica', 12))
-filenames = []
+filenames = [] # All the file names
+other_filenames = [] # The file names not having exposurecompensation (exposureBiasValue) 0
+ordered_filenames = [] # This is the list where the ref_image is the first one
 pathnames = []
 read_errors = ""
 images = [] # This one is used for our calculations
@@ -45,6 +49,7 @@ image_exif_dictionaries = {}
 reference_image = ''
 image_formats = (('image formats', '*.jpg *.JPG *.jpeg *.JPEG *.png *.PNG *.tif *.TIF *.tiff *.TIFF'),)
 null_image = ''
+files_chosen = None
 #thread_done = 1
 
 
@@ -52,35 +57,6 @@ null_image = ''
 #----------------------------------------------------------------------------------------------
 #------------------------------- Helper functions ---------------------------------------------
 # This functions
-def disable_elements(window, disable_elements):
-    '''
-    This function disables / enables some buttons on the screen
-    and does the opposite action for the output element
-
-    :param window:             main window where elements are acted upon
-    :type window:              Window
-    :param disable_elements:   True or False
-    :type disable_elements:    (bool)
-    '''
-
-    if disable_elements:
-        window['_btnLoadImages_'].update(disabled=True)
-        window['_btnPreferences_'].update(disabled=True)
-        window['_select_all_'].update(disabled=True)
-        window['_create_preview_'].update(disabled=True)
-        window['_CreateImage_'].update(disabled=True)
-        window['_Close_'].update(disabled=True)
-        ##window['_sgOutput_'].update(visible=True, disabled=False, echo_stdout_stderr=True) # When buttons are disabled, output window becomes visible
-        #window['_sgOutput_'].update(visible=True)  # When buttons are disabled, output window becomes visible
-    else:
-        window['_btnLoadImages_'].update(disabled=False)
-        window['_btnPreferences_'].update(disabled=False)
-        window['_select_all_'].update(disabled=False)
-        window['_create_preview_'].update(disabled=False)
-        window['_CreateImage_'].update(disabled=False)
-        window['_Close_'].update(disabled=False)
-        ##window['_sgOutput_'].update(visible=False, disabled=True, echo_stdout_stderr=False) # When buttons are enabled, output window is hidden
-        #window['_sgOutput_'].update(visible=False) # When buttons are enabled, output window is hidden
 
 def display_processing_time(window, starttime, stoptime):
     proc_time = stoptime - starttime
@@ -98,7 +74,6 @@ def replace_strings(Lines, orgstring, newstring):
             newLines.append(newstring + '\n')
     return newLines
 
-
 #----------------------------------------------------------------------------------------------
 #----------------------------- Main function --------------------------------------------------
 def main():
@@ -108,20 +83,24 @@ def main():
     file_functions.recreate_tmp_workfolder(tmpfolder)
     sg.user_settings_filename(path=os.path.realpath(Path.home()))
     start_folder = sg.user_settings_get_entry('imgfolder', os.path.realpath(Path.home()))
+
+    MLINE = '-ML-' + sg.WRITE_ONLY_KEY
+
+    # Display the GUI to the user
+    window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)
+
+    sg.cprint_set_output_destination(window, MLINE)
+    # Show some variabels to the user
     print("\ntmpfolder: ", tmpfolder)
-    print("settingsfile: ",settingsFile)
+    print("settingsfile: ", settingsFile)
     print("tmpdir", os.path.realpath(tempfile.gettempdir()))
     print("current path ", os.path.realpath('.'))
     print('pyinstaller _MEIPASS ', getattr(sys, '_MEIPASS', 'NotRunningInPyInstaller'))
     if os.getenv('HERE') != None:
         print('HERE ', os.getenv('HERE'))
 
-    # Display the GUI to the user
-    window =  ui_layout.create_and_show_gui(tmpfolder,start_folder)
-
     # Now do the version check
     file_functions.version_check()
-
 
     while True:
         event, values = window.Read(timeout=100)
@@ -130,41 +109,49 @@ def main():
             return('Cancel', values)
             break
         elif event == 'Load images':
-            sg.popup_get_file('Load images', no_window=True, initial_folder=ui_actions.which_folder(), file_types = program_texts.image_formats)
+        #elif event == 'Load images' or event == '_btnLoadImages_':
+            file_functions.remove_temp_files()
+            values['-FILE LIST-'] = None
+            reference_image = None
+            image_exif_dictionaries = []
+            other_filenames = []
+            read_errors = []
+            files_chosen = sg.popup_get_file('Load images', multiple_files=True, no_window=True, initial_folder=ui_actions.which_folder(), file_types = program_texts.image_formats)
+            #values['-FILE LIST-'] = list(files_chosen)
+            values["-FILES-"] = "; ".join(files_chosen)
+            opencv_functions.myprint(window, "files chosen " + files_chosen)
         elif event == '-FILES-': # user just loaded a bunch of images
-            reference_image, folder, image_exif_dictionaries, read_errors = ui_actions.fill_images_listbox(window, values)
+            ordered_filenames = []
+            reference_image, folder, image_exif_dictionaries, other_filenames, all_filenames, read_errors = ui_actions.fill_images_listbox(window, values)
             #print(image_exif_dictionaries.keys())
-            print("reference_image " + reference_image)
+            opencv_functions.myprint(window, "reference_image " + reference_image)
+            ordered_filenames.append(reference_image)
+            ordered_filenames.extend(other_filenames)
             if (len(read_errors)>0):
                 sg.Popup("Errors reading file(s):\n\n" + read_errors, icon=image_functions.get_icon(), auto_close=False)
             ui_actions.clean_screen_after_file_loading(window)
             window['-FILE LIST-'].update()
-        # Check on presets
-        elif event == '_alltodefault_':
-            ui_actions.set_presets(window, 'defaults')
-        elif event == '_noisereduction_':
-            ui_actions.set_presets(window, 'noisereduction')
-        elif event == '_focusstacking_':
-            ui_actions.set_presets(window, 'focusstacking')
-        # Now check the numerical "text" fields if only numerical
-        elif event == '_inHFOV_' and values['_inHFOV_'] and values['_inHFOV_'][-1] not in ('0123456789.'):
-            window['_inHFOV_'].update(values['_inHFOV_'][:-1])
-        elif event == '_correlation_' and values['_correlation_'] and values['_correlation_'][-1] not in ('0123456789.'):
-            window['_correlation_'].update(value='0.9')
-        elif event == '_inNoCP_' and values['_inNoCP_'] and values['_inNoCP_'][-1] not in ('0123456789'):
-            window['_inNoCP_'].update(value='8')
-        elif event == '_removeCPerror_' and values['_removeCPerror_'] and values['_removeCPerror_'][-1] not in ('0123456789'):
-            window['_removeCPerror_'].update(value='3')
-        elif event == '_inScaleDown_' and values['_inScaleDown_'] and values['_inScaleDown_'][-1] not in ('0123456789'):
-            window['_inScaleDown_'].update(value='1')
-        elif event == '_inGridsize_' and values['_inGridsize_'] and values['_inGridsize_'][-1] not in ('0123456789'):
-            window['_inGridsize_'].update(value='5')
-        # end of numerical checks
-        elif event == '_autoHfov':
-            if values['_autoHfov']:
-                window['_inHFOV_'].update(disabled=True)
+        # Visibility of "create image" buttons based on desired output
+        elif event == '_exposurefusion_' or event == '_noisereduction_' or event == '_focusstacking_':
+            ui_actions.hide_show_buttons_options(window, values)
+        # Available options for alignment
+        elif event =='_orb_' or event == '_ecc_' or event == '_sift_' or event == '_alignmtb_':
+            ui_actions.set_align_options(window, values)
+        elif event == '_showOutput_':
+            if values['_showOutput_']:
+                window["-MLINE-"].update(visible=True)
             else:
-                window['_inHFOV_'].update(disabled=False)
+                window["-MLINE-"].update(visible=False)
+        # Now check the numerical "text" fields if only numerical
+        elif event == '_maxfeatures_' and values['_maxfeatures_'] and values['_maxfeatures_'][-1] not in ('0123456789.'):
+            window['_maxfeatures_'].update(value='5000')
+        elif event == '_keeppercent_' and values['_keeppercent_'] and values['_keeppercent_'][-1] not in ('0123456789.'):
+            window['_keeppercent_'].update(value='0.1')
+        elif event == '_max_iterations_' and values['_max_iterations_'] and values['_max_iterations_'][-1] not in ('0123456789'):
+            window['_max_iterations_'].update(value='500')
+        elif event == '_termination_eps_' and values['_termination_eps_'] and values['_termination_eps_'][-1] not in ('0123456789'):
+            window['_termination_eps_'].update(value='1e-10')
+        # end of numerical checks
         elif event == 'About...':
             window.disappear()
             sg.popup(program_texts.about_message, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
@@ -175,11 +162,10 @@ def main():
             window.reappear()
         elif event == 'Program buttons':
             #window.disappear()
-            program_texts.explain_parameters_popup()
+            #sg.popup(program_texts.Explain_buttons, grab_anywhere=True, keep_on_top=True, icon=image_functions.get_icon())
             #window.reappear()
-        elif event.startswith('Align_Image_stack parameters') \
-                or event.startswith('Align_Image_stack tips') \
-                or event.startswith('Enfuse parameters') \
+            program_texts.explain_buttons_popup()
+        elif event.startswith('Alignment') \
                 or event.startswith('Why exposure')\
                 or event.startswith('Examples'):
             file_functions.show_html_in_browser(event)
@@ -190,6 +176,7 @@ def main():
         elif event == '_select_all_':
             #print('_select_all_')
             list_index = []
+            #print("select all files" + values["-FILES-"])
             max = len(values["-FILES-"].split(";"))
             list_index.extend(range(0, max))
             window['-FILE LIST-'].update(set_to_index = list_index,)
@@ -219,11 +206,12 @@ def main():
         elif event == '_useOpenCV_':
             ui_actions.set_levels_status(window,values)
         elif event == '_create_preview_':
-            print('User pressed Create Preview\n')
+            opencv_functions.myprint(window, 'User pressed Create Preview\n')
             window['_proc_time_'].update('Processing time: --')
             if len(values['-FILE LIST-']) >1: # We have at least 2 files
+                opencv_functions.myprint(window,'resizing the images to preview size')
                 failed, resized_images = image_functions.resizetopreview(values, folder, tmpfolder)
-                print(failed)
+                opencv_functions.myprint(window, "failed resizes: " + failed + "\nresized images: " + str(resized_images))
                 go_on = False
                 if failed != '':
                     is_zero = file_functions.getFileSizes(values, tmpfolder)
@@ -236,29 +224,33 @@ def main():
                 else: # failed = ''
                     go_on = True
                 if go_on:
-                    disable_elements(window, True)
+                    ui_actions.disable_elements(window, True)
                     window.refresh()
                     starttime = timeit.default_timer()
-                    if (values['_useAISPreview_']):
-                        cmdstring, cmd_list = ais_enfuse.create_ais_command(values, folder, tmpfolder, 'preview')
-                        print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
-                        result = run_commands.run_shell_command(cmdstring, cmd_list, " running align_image_stack ", False)
-                        if result == 'OK':
-                            cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder, 'preview_ais','')
-                            #print("\n\ncmdstring: ", cmdstring, "\ncmd_list: ", cmd_list, "\n\n")
-                            result = run_commands.run_shell_command(cmdstring, cmd_list, 'running enfuse', False)
+
+                    thumb_reference, other_thumbs, read_errors = image_functions.get_thumbs_exposure_compensation(resized_images)
+                    if (values['_exposurefusion_']):
+                        if (values['_always_align_']):
+                            # Do the orb/mergemertens thing
+                            opencv_functions.myprint(window, "Align the preview images and then exposure fuse them")
+                            if thumb_reference == "":
+                                opencv_functions.align_fuse(window, values, resized_images, os.path.join(tmpfolder,'preview.jpg'), tmpfolder)
+                            else:
+                                opencv_functions.align_fuse(window, values, resized_images, os.path.join(tmpfolder,'preview.jpg'), tmpfolder)
                         else:
-                            print("return string from ais ", result)
-                    else:  # Create preview without using ais
-                        cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder, 'preview', '')
-                        print("\n\n", cmdstring, "\n\n")
-                        result = run_commands.run_shell_command(cmdstring, cmd_list, ' running enfuse ', False)
+                            # Only do the mergemertens thing
+                            opencv_functions.myprint(window, "Only do the mergemertens exposure fusion on the preview")
+                    else:  # Only stack the preview
+                        # Only align
+                        opencv_functions.myprint(window, "Only align the images for stacking")
+                        stacked_image = opencv_functions.which_stacking_metnod(window, values, all_filenames)
+                        cv2.imwrite(os.path.join(tmpfolder, 'preview.jpg'), stacked_image)
                     stoptime = timeit.default_timer()
                     display_processing_time(window, starttime, stoptime)
-                    disable_elements(window, False)
+                    ui_actions.disable_elements(window, False)
                     window.refresh()
                     if reference_image == "":
-                        reference_image = null_image
+                        reference_image = resized_images[0]
                     image_functions.copy_exif_info(reference_image, os.path.join(tmpfolder, 'preview.jpg'))
                     print('preview filepath', os.path.join(tmpfolder, 'preview.jpg'))
                     image_functions.display_preview(window, os.path.join(tmpfolder, 'preview.jpg'))
@@ -266,35 +258,82 @@ def main():
             else: # 1 or 0 images selected
                 sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
         elif event == '_CreateImage_':
-            print('User pressed "Create Exposure fused image\n')
+            opencv_functions.myprint(window, '\nUser pressed "Create Exposure fused image\n')
             window['_proc_time_'].update('Processing time: --')
+            file_functions.remove_temp_files()
             if len(read_errors) == 0:
                 if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
                     newFileName, full_images = image_functions.get_filename_images(values, folder)
                     if newFileName != '' and newFileName != 'Cancel':
-                        disable_elements(window, True)
+                        #sg.popup_animated(sg.DEFAULT_BASE64_LOADING_GIF, background_color='white', transparent_color='white', time_between_frames=100)
+                        ui_actions.disable_elements(window, True)
                         window.refresh()
                         starttime = timeit.default_timer()
                         newFileName = file_functions.check_filename(values, newFileName)
-                        if values['_useAIS_']:
-                            cmdstring, cmd_list = ais_enfuse.create_ais_command(values, folder, tmpfolder, '')
-                            print("\n\n", cmdstring, "\n\n")
-                            result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running align_image_stack  \n  Please be patient  ',False)
-                            print("\n\n" + result + "\n\n")
-                            if result == 'OK':
-                                cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder,'full_ais',os.path.join(folder,newFileName))
-                                print("\n\n", cmdstring, "\n\n")
-                                result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running enfuse  \n  Please be patient  ',False)
-                        else:  # Create full image without using ais
-                            cmdstring, cmd_list = ais_enfuse.create_enfuse_command(values, folder, tmpfolder, '',os.path.join(folder,newFileName))
-                            print("\n\n", cmdstring, "\n\n")
-                            result = run_commands.run_shell_command(cmdstring, cmd_list,'  Now running enfuse  \n  Please be patient  ',False)
+                        if values['_always_align_']:
+                            #window.perform_long_operation(lambda : opencv_functions.align_fuse(values,ordered_filenames,os.path.join(folder,newFileName), tmpfolder), '-END KEY-')
+                            #thread = threading.Thread(target=opencv_functions.align_fuse(values, ordered_filenames, os.path.join(folder, newFileName), tmpfolder), daemon=True)
+                            #thread.start()
+                            #window.start_thread(opencv_functions.align_fuse(window, values, ordered_filenames, os.path.join(folder, newFileName), tmpfolder), '-THREAD FINISHED-')
+                            if reference_image == "":
+                                opencv_functions.align_fuse(window, values, all_filenames, os.path.join(folder, newFileName), tmpfolder)
+                            else:
+                                opencv_functions.align_fuse(window, values, ordered_filenames, os.path.join(folder, newFileName), tmpfolder)
+                        else:  # Create full image without using alignment
+                            if reference_image == "":
+                                opencv_functions.exposure_fuse(window, values, all_filenames, os.path.join(folder, newFileName), tmpfolder, "Full")
+                            else:
+                                opencv_functions.exposure_fuse(window, values, ordered_filenames, os.path.join(folder, newFileName), tmpfolder, "Full")
                         stoptime = timeit.default_timer()
                         display_processing_time(window, starttime, stoptime)
-                        disable_elements(window, False)
+                        ui_actions.disable_elements(window, False)
+                        #sg.popup_animated(None)
                         window.refresh()
                         # print('create reference_image: ', reference_image)
                         # print('null_image', null_image)
+                        if reference_image == "":
+                            reference_image = all_filenames[0]
+                        image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
+                        if values['_dispFinalIMG_']:
+                            image_functions.displayImageWindow(os.path.join(folder, newFileName))
+                    window['_CreateImage_'].set_focus(force=True)
+                else:  # 1 or 0 images selected
+                    sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
+            else:
+                sg.popup("At least one of the files could not be read. This means that no enfused image can be created.", icon=image_functions.get_icon(), auto_close=False)
+        elif event == '_create_noise_reduced_':
+            stacked_image = ""
+            opencv_functions.myprint(window, '\nUser pressed "Create noise reduced image from stack"\n')
+            window['_proc_time_'].update('Processing time: --')
+            file_functions.remove_temp_files()
+            if len(read_errors) == 0:
+                if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
+                    newFileName, full_images = image_functions.get_filename_images(values, folder)
+                    if newFileName != '' and newFileName != 'Cancel':
+                        ui_actions.disable_elements(window, True)
+                        window.refresh()
+                        starttime = timeit.default_timer()
+                        stacked_image = opencv_functions.which_stacking_metnod(window, values, all_filenames)
+                        """
+                        if values['_orb_']:
+                            opencv_functions.myprint(window,"Stacking images using ORB method")
+                            stacked_image = opencv_functions.stackImages_ORB_SIFT(window, values, all_filenames)
+                        elif values['_ecc_']:
+                            # Stack images using ECC method
+                            opencv_functions.myprint(window,"Stacking images using ECC method")
+                            stacked_image = opencv_functions.stackImagesECC(window, values, all_filenames)
+                        else:
+                            # Stack images using SIFT method
+                            opencv_functions.myprint(window,"Stacking images using SIFT method")
+                            stacked_image = opencv_functions.stackImages_ORB_SIFT(window, values, all_filenames)
+                        """
+                        cv2.imwrite(os.path.join(folder, newFileName), stacked_image)
+                        stoptime = timeit.default_timer()
+                        display_processing_time(window, starttime, stoptime)
+                        ui_actions.disable_elements(window, False)
+                        window.refresh()
+                        # opencv_functions.myprint(window,'create reference_image: ', reference_image)
+                        # opencv_functions.myprint(window,'null_image', null_image)
                         if reference_image == "":
                             reference_image = null_image
                         image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
@@ -305,6 +344,49 @@ def main():
                     sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
             else:
                 sg.popup("At least one of the files could not be read. This means that no enfused image can be created.", icon=image_functions.get_icon(), auto_close=False)
+        elif event == '_create_focus_stacked_':
+            opencv_functions.myprint(window,'\nUser pressed "Create focus stacked image"\n')
+            #window['-STATUS-'].update('User pressed "Create focus stacked image"')
+            window['_proc_time_'].update('Processing time: --')
+            file_functions.remove_temp_files()
+            if len(read_errors) == 0:
+                if len(values['-FILE LIST-']) > 1:  # We have at least 2 files
+                    newFileName, full_images = image_functions.get_filename_images(values, folder)
+                    if newFileName != '' and newFileName != 'Cancel':
+                        ui_actions.disable_elements(window, True)
+                        window.refresh()
+                        starttime = timeit.default_timer()
+                        focus_stacked_image = opencv_functions.focus_stack(window, values, all_filenames)
+                        cv2.imwrite(os.path.join(folder, newFileName), focus_stacked_image)
+                        stoptime = timeit.default_timer()
+                        display_processing_time(window, starttime, stoptime)
+                        ui_actions.disable_elements(window, False)
+                        window.refresh()
+                        # opencv_functions.myprint(window,'create reference_image: ', reference_image)
+                        # opencv_functions.myprint(window,'null_image', null_image)
+                        if reference_image == "":
+                            reference_image = null_image
+                        image_functions.copy_exif_info(reference_image, os.path.join(folder, newFileName))
+                        if values['_dispFinalIMG_']:
+                            image_functions.displayImageWindow(os.path.join(folder, newFileName))
+                    window['_CreateImage_'].set_focus(force=True)
+                    #window['-STATUS-'].update('')
+                else:  # 1 or 0 images selected
+                    sg.popup("You need to select at least 2 images", icon=image_functions.get_icon())
+            else:
+                sg.popup("At least one of the files could not be read. This means that no enfused image can be created.", icon=image_functions.get_icon(), auto_close=False)
+        elif event == '-END KEY-':
+            return_value = values[event]
+            window['-STATUS-'].update(f'Completed. Returned: {return_value}')
+
+
+        # Do the thread actions and checks
+        #if thread:
+        #    sg.popup_animated(sg.DEFAULT_BASE64_LOADING_GIF, background_color='white', transparent_color='white', time_between_frames=100)
+        #    thread.join(timeout=0)
+        #    if not thread.is_alive():
+        #        sg.popup_animated(None)
+        #        thread = None
     window.Close()
 
  

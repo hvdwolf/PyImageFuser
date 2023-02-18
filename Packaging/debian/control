@@ -6,7 +6,7 @@ Description: Python3 PySimpleGui program to exposure fuse bracketed images and r
  PyImageFuser is a graphical frontend python2 PySimpleGUI program for the 
  excellent open source command line tools align_image_stack and enfuse 
  to exposure fuse bracketed images and reduce noise in stacks 
-Depends: python3, python3-tk, hugin-tools, enfuse
+Depends: python3, python3-tk, python3-opencv, python3-numpy
 Homepage: http://hvdwolf.github.io/PyImageFuser/
 Vcs-Git: https://github.com/hvdwolf/PyImageFuser.git
 Vcs-Browser: https://github.com/hvdwolf/PyImageFuser

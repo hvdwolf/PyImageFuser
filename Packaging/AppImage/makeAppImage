@@ -8,8 +8,6 @@
 # Necessary python3 modules
 
 # Specify the correct path (from the root path)
-EA="enfuse_ais"
-
 if [ "$1" = "" ]
 then
         printf "\n\nYou have to provide the version\n\n"
@@ -26,10 +24,7 @@ pwd
 
 printf "\nRemove possible previous build and dist folders and recreate binary\n\n"
 rm -rf dist build *.spec
-pyinstaller PyImageFuser.py
-
-#printf "\nNow copy enfuse & align_image_stack\n"
-#cp -r $EA dist/enfuse_ais
+pyinstaller PyImageFuser.py --paths='/home/hvdwolf/.local/lib/python3.9/site-packages/cv2'
 
 #printf "\nCopy resources\n"
 #cp -r images docs dist
@@ -60,7 +55,6 @@ mkdir -p usr/share/metainfo
 
 cp ../../../images/logo.png usr/share/pyimagefuser
 cp ../../../images/logo.png .
-#mv jExifToolGUI.jar usr/share/pyimagefuser
 cp ../pyimagefuser.desktop usr/share/applications
 cp ../pyimagefuser.desktop .
 cp ../pyimagefuser.appdata.xml usr/share/metainfo
@@ -69,7 +63,6 @@ cp ../pyimagefuser.appdata.xml usr/share/metainfo
 printf "\n\nNow copy enfuse_ais, docs, licenses and images into our AppImage\n\n"
 cp -r ../../../images .
 cp -r ../../../docs .
-cp -r ../../../enfuse_ais/* .
 cp -r ../../../GPLv* .
 
 #

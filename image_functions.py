@@ -3,7 +3,7 @@
 # image_functions.py
 # This helper file does image manipulation and display
 
-# Copyright (c) 2022, Harry van der Wolf. all rights reserved.
+# Copyright (c) 2022-2023, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public Licence as published
 # by the Free Software Foundation, either version 2 of the Licence, or
@@ -54,7 +54,58 @@ def get_identifier_tag(filename):
         print(k, '\t', tag)
     im.close()
 
-# Read all the exif info from the loaded images, if available
+# Read all the exif info, if available from the list of filenames given
+# That can be full size images or thumbs
+def get_thumbs_exposure_compensation(resized_images):
+    reference_image = ""
+    tmp_reference_image = ""
+    read_errors = ""
+    other_files = []
+
+    for thumb_file in resized_images:
+        try:
+            img = Image.open(thumb_file)
+            try:
+                exif = img.getexif()
+                if exif is not None:
+                    for k, v in img.getexif().items():
+                        tag = TAGS.get(k)
+                        if (tag == 'ExposureBiasValue'):
+                            # print(TAGS.get(k), ' : ', v)
+                            if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                                tmp_reference_image = thumb_file
+                                # print('reference_image: ', reference_image)
+                    # On pillow after jan 2nd 2022 we need additionally the exif.get_ifd(0x8769)
+                    for k, v in img.getexif().get_ifd(0x8769).items():
+                        tag = TAGS.get(k)
+                        if (tag == 'ExposureBiasValue'):
+                            # print(TAGS.get(k), ' : ', v)
+                            if v == '0.0' or v == '0' or v == 0.0 or v == 0:
+                                tmp_reference_image = thumb_file
+                                # print('reference_image: ', reference_image)
+
+            except Exception as e:
+                pass
+
+            img.close()
+        except Exception as e:
+            print("Error opening this image/file: " + thumb_file)
+            read_errors += "Error opening this image/file: " + thumb_file + "\n"
+            pass
+
+        if tmp_reference_image != '':
+            reference_image = tmp_reference_image
+        else:
+            other_files.append(thumb_file)
+
+    # Check if we have a reference_image at all
+    if reference_image == None or reference_image == "":
+        reference_image = resized_images[ int(len(resized_images) / 2) ]
+
+    return reference_image, other_files, read_errors
+
+
+# Read all the exif info from the given image, if available
 def get_all_exif_info(filename):
     '''
     This function reads all the exif info from the loaded images, if available
@@ -78,19 +129,19 @@ def get_all_exif_info(filename):
                     tag = TAGS.get(k)
                     exif_dictionary[tag] = v
                     if (tag == 'ExposureBiasValue'):
-                        print(TAGS.get(k), ' : ', v)
+                        #print(TAGS.get(k), ' : ', v)
                         if v == '0.0' or v == '0' or v == 0.0 or v == 0:
                             reference_image = filename
-                            print('reference_image: ', reference_image)
+                            #print('reference_image: ', reference_image)
                 # On pillow after jan 2nd 2022 we need additionally the exif.get_ifd(0x8769)
                 for k, v in img.getexif().get_ifd(0x8769).items():
                     tag = TAGS.get(k)
                     exif_dictionary[tag] = v
                     if (tag == 'ExposureBiasValue'):
-                        print(TAGS.get(k), ' : ', v)
+                        #print(TAGS.get(k), ' : ', v)
                         if v == '0.0' or v == '0' or v == 0.0 or v == 0:
                             reference_image = filename
-                            print('reference_image: ', reference_image)
+                            #print('reference_image: ', reference_image)
 
             else:
                 exif_dictionary['no exif'] = 'no exif'
@@ -439,12 +490,16 @@ def reorient_img(pil_img):
     img_exif = pil_img.getexif()
 
     if len(img_exif):
-        if img_exif[274] == 3:
-            pil_img = pil_img.transpose(Image.ROTATE_180)
-        elif img_exif[274] == 6:
-            pil_img = pil_img.transpose(Image.ROTATE_270)
-        elif img_exif[274] == 8:
-            pil_img = pil_img.transpose(Image.ROTATE_90)
+        try:
+            if img_exif[274] == 3:
+                pil_img = pil_img.transpose(Image.ROTATE_180)
+            elif img_exif[274] == 6:
+                pil_img = pil_img.transpose(Image.ROTATE_270)
+            elif img_exif[274] == 8:
+                pil_img = pil_img.transpose(Image.ROTATE_90)
+        except Exception as e:
+            print("Something went wrong trying to reorient ", pil_img)
+            pass
 
     return pil_img
 
@@ -540,9 +595,11 @@ def get_filename_images(values, folder):
 
     return folderFileName[1], full_images
 
+
+
 def copy_exif_info(reference_image, imagepath):
-    print('reference_image ', reference_image)
-    print('imagepath ', imagepath)
+    #print('reference_image ', reference_image)
+    #print('imagepath ', imagepath)
     ref_img = Image.open(reference_image)
     ref_exifd = ref_img.getexif()
     #print("ref_exifd ", str(ref_exifd))
@@ -550,43 +607,47 @@ def copy_exif_info(reference_image, imagepath):
     ref_img.close()
     pil_img = Image.open(imagepath)
     dcraw_converted = False
-    for tag, value in ref_exifd.items():
-        #print(tag, value)
-        if 'dcraw' in str(value).lower():
-            # If we have a tiff converted from a RAW, we do not have exif info
-            dcraw_converted = True
-
-    if dcraw_converted:
-        pil_img.save(imagepath, "JPEG")
-    else:
-        pil_img.save(imagepath, "JPEG", exif=ref_exifd)
-
-    pil_img.close()
-    '''
     try:
-        print('reference_image ', reference_image)
-        print('imagepath ', imagepath)
-        ref_img = Image.open(reference_image)
-        ref_exifd = ref_img.getexif()
-        #ref_exifd = ref_img.info['exif']
-        ref_img.close()
-    except Exception as e:
-        print("something went wrong copying the exif info from " + reference_image)
-        pass
+        for tag, value in ref_exifd.items():
+            # print(tag, value)
+            if 'dcraw' in str(value).lower():
+                # If we have a tiff converted from a RAW, we do not have exif info
+                dcraw_converted = True
 
+        if dcraw_converted:
+            pil_img.save(imagepath, "JPEG")
+        else:
+            pil_img.save(imagepath, "JPEG", exif=ref_exifd)
 
-    pil_img = Image.open(imagepath)
-    # first make a backup in case of error
-    backup = pil_img.copy()
-    try:
-        backuppath = imagepath.replace('preview', 'backup-preview')
-        backup.save(backuppath, "JPEG")
-        pil_img.save(imagepath, "JPEG", exif=ref_exifd)
         pil_img.close()
-        os.remove(backuppath)
+        '''
+        try:
+            print('reference_image ', reference_image)
+            print('imagepath ', imagepath)
+            ref_img = Image.open(reference_image)
+            ref_exifd = ref_img.getexif()
+            #ref_exifd = ref_img.info['exif']
+            ref_img.close()
+        except Exception as e:
+            print("something went wrong copying the exif info from " + reference_image)
+            pass
+
+
+        pil_img = Image.open(imagepath)
+        # first make a backup in case of error
+        backup = pil_img.copy()
+        try:
+            backuppath = imagepath.replace('preview', 'backup-preview')
+            backup.save(backuppath, "JPEG")
+            pil_img.save(imagepath, "JPEG", exif=ref_exifd)
+            pil_img.close()
+            os.remove(backuppath)
+        except Exception as e:
+            print("something went wrong saving the exif info to " + imagepath)
+            os.replace(backuppath, imagepath)
+            pass
+        '''
     except Exception as e:
-        print("something went wrong saving the exif info to " + imagepath)
-        os.replace(backuppath, imagepath)
+        print("\nThere is no exif info to copy from the reference image to the new image\n")
         pass
-    '''
 

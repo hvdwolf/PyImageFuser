@@ -2,7 +2,7 @@
 
 # file_functions.py - This python helper scripts holds the user interface functions
 
-# Copyright (c) 2022, Harry van der Wolf. all rights reserved.
+# Copyright (c) 2022-2023, Harry van der Wolf. all rights reserved.
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public Licence as published
 # by the Free Software Foundation, either version 2 of the Licence, or
@@ -50,8 +50,17 @@ def recreate_tmp_workfolder(tmp_folder):
     else: # It does not exist so we need to recreate it
         os.mkdir(tmp_folder)
 
-def remove_tmp_workfolder(tmp_folder):
+def remove_temp_files():
+    fileList = glob.glob('/tmp/align*')
+    for filePath in fileList:
+        try:
+            os.remove(filePath)
+        except:
+            print("Error while deleting file : ", filePath)
 
+
+
+def remove_tmp_workfolder(tmp_folder):
     if os.path.exists(tmp_folder):
         try:
             shutil.rmtree(tmp_folder) # emove folder with all contents
@@ -172,12 +181,8 @@ def version_check():
             webbrowser.open('https://github.com/hvdwolf/PyImageFuser/releases')
 
 def show_html_in_browser(main_event):
-    if main_event.startswith('Align_Image_stack parameters'):
-        html_file = 'align_image_stack.html'
-    elif main_event.startswith('Align_Image_stack tips'):
-        html_file = 'ais_tips.html'
-    elif main_event.startswith('Enfuse parameters'):
-        html_file = 'enfuse.html'
+    if main_event.startswith('Alignment'):
+        html_file = 'alignment.html'
     elif main_event.startswith('Why exposure'):
         html_file = 'exposurefusing.html'
     elif main_event.startswith('Examples'):

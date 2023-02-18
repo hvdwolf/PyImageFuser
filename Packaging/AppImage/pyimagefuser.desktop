@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=PyImageFuser
-Comment=PyImageFuser is a graphical exposure bracketing app using enfuse and align_image_stack
+Comment=PyImageFuser is a graphical exposure bracketing app, a stacking app and focus stacking app using OpenCV
 Exec=./PyImageFuser
 Icon=/usr/share/pyimagefuser/logo
 Terminal=false
